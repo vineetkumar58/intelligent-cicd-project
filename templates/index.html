@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Intelligent CI/CD System</title>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f8;
+            text-align: center;
+            padding-top: 80px;
+        }
+
+        .card {
+            background: white;
+            width: 500px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.15);
+        }
+
+        input {
+            width: 90%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button {
+            background: #2b7cff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1f5edb;
+        }
+
+        h1 {
+            color: #2b7cff;
+        }
+
+        .note {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .dashboard-btn{
+            margin-top:20px;
+            display:inline-block;
+            background:#16a34a;
+            padding:10px 20px;
+            border-radius:8px;
+            text-decoration:none;
+            color:white;
+            font-weight:bold;
+        }
+
+        .dashboard-btn:hover{
+            background:#15803d;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h1>Intelligent CI/CD System</h1>
+
+        <form method="POST" action="/analyze">
+            <label><b>Enter GitHub Repository URL</b></label><br><br>
+
+            <input type="text" name="repo_url" placeholder="https://github.com/user/repository" required>
+            <br><br>
+
+            <button type="submit">Analyze & Deploy</button>
+        </form>
+
+        <a class="dashboard-btn" href="/dashboard">View Deployment Dashboard</a>
+
+        <div class="note">
+            System predicts deployment risk, auto-rollbacks on failure and skips rebuild if no changes detected.
+        </div>
+    </div>
+
+</body>
+</html>

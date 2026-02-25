@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deployment Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            background:#f4f6fb;
+            text-align:center;
+            margin:0;
+        }
+
+        h1{
+            background:#1f2937;
+            color:white;
+            padding:15px;
+            margin:0;
+        }
+
+        .cards{
+            display:flex;
+            justify-content:center;
+            gap:25px;
+            margin-top:20px;
+        }
+
+        .card{
+            background:white;
+            padding:20px;
+            width:180px;
+            border-radius:10px;
+            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+            font-size:18px;
+            font-weight:bold;
+        }
+
+        canvas{
+            margin-top:40px;
+            max-width:700px;
+        }
+
+        a{
+            display:inline-block;
+            margin-top:30px;
+            padding:10px 18px;
+            background:#2563eb;
+            color:white;
+            border-radius:8px;
+            text-decoration:none;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>📊 Intelligent CI/CD Analytics Dashboard</h1>
+
+<div class="cards">
+    <div class="card">Total Runs<br>{{ total }}</div>
+    <div class="card">Low Risk<br>{{ low }}</div>
+    <div class="card">Medium Risk<br>{{ medium }}</div>
+    <div class="card">High Risk<br>{{ high }}</div>
+</div>
+
+<canvas id="riskChart"></canvas>
+
+<script>
+const low = {{ low | default(0) }};
+const medium = {{ medium | default(0) }};
+const high = {{ high | default(0) }};
+
+const ctx = document.getElementById('riskChart');
+
+new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ['LOW','MEDIUM','HIGH'],
+        datasets: [{
+            data: [low, medium, high]
+        }]
+    },
+    options:{
+        plugins:{
+            legend:{ position:'bottom' }
+        }
+    }
+});
+</script>
+
+<a href="/">⬅ Back to Analyzer</a>
+
+</body>
+</html>
