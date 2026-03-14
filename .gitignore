@@ -1,4 +1,17 @@
-cloned_repo*
-venv/
+# Python
 __pycache__/
 *.pyc
+
+# Virtual environment
+venv/
+
+# Runtime generated folders
+cloned_repo/
+
+# Deployment state files
+deployment_history.json
+last_state.json
+
+# OS files
+.DS_Store
+Thumbs.db
