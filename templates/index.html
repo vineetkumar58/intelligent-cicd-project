@@ -1,94 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Intelligent CI/CD System</title>
+<title>Intelligent CI/CD</title>
 
-    <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f6f8;
-            text-align: center;
-            padding-top: 80px;
-        }
+<style>
 
-        .card {
-            background: white;
-            width: 500px;
-            margin: auto;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.15);
-        }
+body{
+margin:0;
+font-family:Arial;
+background:#0f1b2d;
+color:white;
+}
 
-        input {
-            width: 90%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
+.topbar{
+display:flex;
+justify-content:space-between;
+padding:15px 30px;
+background:#16233a;
+}
 
-        button {
-            background: #2b7cff;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+a{
+color:white;
+text-decoration:none;
+margin-left:15px;
+}
 
-        button:hover {
-            background: #1f5edb;
-        }
+.container{
+text-align:center;
+margin-top:120px;
+}
 
-        h1 {
-            color: #2b7cff;
-        }
+input{
+width:400px;
+padding:12px;
+border:none;
+border-radius:6px;
+}
 
-        .note {
-            margin-top: 15px;
-            font-size: 13px;
-            color: #666;
-        }
+button{
+padding:12px 25px;
+border:none;
+background:#3498db;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
 
-        .dashboard-btn{
-            margin-top:20px;
-            display:inline-block;
-            background:#16a34a;
-            padding:10px 20px;
-            border-radius:8px;
-            text-decoration:none;
-            color:white;
-            font-weight:bold;
-        }
+button:hover{
+background:#2980b9;
+}
 
-        .dashboard-btn:hover{
-            background:#15803d;
-        }
-    </style>
+</style>
+
 </head>
 
 <body>
 
-    <div class="card">
-        <h1>Intelligent CI/CD System</h1>
+<div class="topbar">
 
-        <form method="POST" action="/analyze">
-            <label><b>Enter GitHub Repository URL</b></label><br><br>
+<div>
+<b>Intelligent CI/CD</b>
+</div>
 
-            <input type="text" name="repo_url" placeholder="https://github.com/user/repository" required>
-            <br><br>
+<div>
 
-            <button type="submit">Analyze & Deploy</button>
-        </form>
+<a href="/dashboard">Dashboard</a>
 
-        <a class="dashboard-btn" href="/dashboard">View Deployment Dashboard</a>
+{% if role == "superadmin" %}
+<a href="/admin-panel">Admin Panel</a>
+{% endif %}
 
-        <div class="note">
-            System predicts deployment risk, auto-rollbacks on failure and skips rebuild if no changes detected.
-        </div>
-    </div>
+<a href="/logout">Logout</a>
+
+</div>
+
+</div>
+
+
+<div class="container">
+
+<h1>Deploy Repository</h1>
+
+<form action="/analyze" method="POST"
+onsubmit="return confirm('Start CI/CD deployment for this repository?')">
+
+<input name="repo_url" placeholder="Enter GitHub Repo URL" required>
+
+<br><br>
+
+<button>Analyze & Deploy</button>
+
+</form>
+
+</div>
 
 </body>
 </html>

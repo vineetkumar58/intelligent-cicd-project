@@ -1,174 +1,242 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <title>Intelligent CI/CD Analytics Dashboard</title>
+  <head>
+    <title>Dashboard</title>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f1f5f9;
-            margin: 0;
-        }
+      body {
+        margin: 0;
+        font-family: "Segoe UI";
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        color: white;
+      }
 
-        header {
-            background: linear-gradient(90deg, #1e293b, #0f172a);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            font-size: 26px;
-            font-weight: bold;
-        }
+      /* NAVBAR */
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 30px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+      }
 
-        .container {
-            width: 95%;
-            max-width: 1200px;
-            margin: 30px auto;
-        }
+      .nav a {
+        color: white;
+        text-decoration: none;
+        margin-left: 20px;
+      }
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
+      /* CARDS */
+      .container {
+        padding: 20px;
+      }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 14px;
-            box-shadow: 0 8px 18px rgba(0,0,0,0.08);
-            text-align: center;
-        }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+      }
 
-        .card h2 {
-            margin: 0;
-            font-size: 16px;
-            color: #64748b;
-        }
+      .card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+      }
 
-        .card p {
-            margin-top: 10px;
-            font-size: 22px;
-            font-weight: bold;
-        }
+      .card h2 {
+        margin: 5px 0;
+      }
 
-        .charts {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 30px;
-        }
+      /* CHARTS */
+      .charts {
+        margin-top: 30px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
 
-        .chart-box {
-            background: white;
-            padding: 25px;
-            border-radius: 14px;
-            box-shadow: 0 8px 18px rgba(0,0,0,0.08);
-        }
+      .chart-box {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+      }
 
-        canvas {
-            max-height: 350px !important;
-        }
+      /* TABLE */
+      .table {
+        margin-top: 30px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+      }
 
-        .btn {
-            display: inline-block;
-            margin-top: 40px;
-            padding: 12px 24px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-        }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      canvas {
+        max-height: 300px !important;
+      }
     </style>
-</head>
+  </head>
 
-<body>
-
-<header>
-    📊 Intelligent CI/CD Analytics Dashboard
-</header>
-
-<div class="container">
-
-    <div class="cards">
-        <div class="card"><h2>Total Runs</h2><p>{{ total }}</p></div>
-        <div class="card"><h2>Low Risk</h2><p style="color:#22c55e;">{{ low }}</p></div>
-        <div class="card"><h2>Medium Risk</h2><p style="color:#f59e0b;">{{ medium }}</p></div>
-        <div class="card"><h2>High Risk</h2><p style="color:#ef4444;">{{ high }}</p></div>
-        <div class="card"><h2>Avg Execution Time</h2><p>{{ avg_time }} sec</p></div>
+  <body>
+    <div class="nav">
+      <div>🚀 Intelligent CI/CD Dashboard</div>
+      <div>
+        <a href="/">Home</a>
+        {% if role == "admin" or role == "superadmin" %}
+        <a href="/system-control">⚙️ System Control</a>
+        {% endif %}
+        <a href="/logout">Logout</a>
+      </div>
     </div>
 
-    <div class="charts">
+    <div class="container">
+      <!-- CARDS -->
+      <div class="cards">
+        <div class="card">
+          <h4>Total</h4>
+          <h2>{{total}}</h2>
+        </div>
+        <div class="card">
+          <h4>Success</h4>
+          <h2>{{success}}</h2>
+        </div>
+        <div class="card">
+          <h4>Failures</h4>
+          <h2>{{failed}}</h2>
+        </div>
+        <div class="card">
+          <h4>Avg Time</h4>
+          <h2>{{avg_time}}s</h2>
+        </div>
+        <div class="card">
+          <h4>Failure %</h4>
+          <h2>{{failure_rate}}%</h2>
+        </div>
+      </div>
 
+      <!-- CHARTS -->
+      <div class="charts">
         <div class="chart-box">
-            <h3>Risk Distribution</h3>
-            <canvas id="riskChart"></canvas>
+          <canvas id="riskChart"></canvas>
         </div>
 
         <div class="chart-box">
-            <h3>Deployment Status</h3>
-            <canvas id="statusChart"></canvas>
+          <canvas id="statusChart"></canvas>
         </div>
 
         <div class="chart-box">
-            <h3>Execution Time Trend</h3>
-            <canvas id="timeChart"></canvas>
+          <canvas id="timeChart"></canvas>
         </div>
 
+        <div class="chart-box">
+          <canvas id="repoChart"></canvas>
+        </div>
+
+        {% if role != "user" %}
+        <div class="chart-box">
+          <canvas id="userChart"></canvas>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- TABLE -->
+      <div class="table">
+        <h3>Deployment History</h3>
+
+        <table>
+          <tr>
+            <th>Repo</th>
+            <th>Risk</th>
+            <th>Status</th>
+            <th>Time</th>
+          </tr>
+
+          {% for h in history %}
+          <tr>
+            <td>{{h.repo}}</td>
+            <td>{{h.risk}}</td>
+            <td>{{h.status}}</td>
+            <td>{{h.time}}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
     </div>
 
-    <div style="text-align:center;">
-        <a href="/" class="btn">⬅ Back to Analyzer</a>
-    </div>
+    <script>
 
-</div>
-<script>
-    const low = Number("{{ low }}") || 0;
-    const medium = Number("{{ medium }}") || 0;
-    const high = Number("{{ high }}") || 0;
-    const success = Number("{{ success }}") || 0;
-    const rollback = Number("{{ rollback }}") || 0;
-    const failed = Number("{{ failed }}") || 0;
-    const times = {{ times | default([]) | tojson }};
+      /* RISK PIE */
+      new Chart(document.getElementById("riskChart"), {
+      type: "pie",
+      data: {
+      labels: ["Low","Medium","High"],
+      datasets: [{
+      data: [{{low}},{{medium}},{{high}}]
+      }]
+      }
+      });
 
-    new Chart(document.getElementById('riskChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['LOW', 'MEDIUM', 'HIGH'],
-            datasets: [{
-                data: [low, medium, high],
-                backgroundColor: ['#22c55e','#f59e0b','#ef4444']
-            }]
-        }
-    });
+      /* STATUS BAR */
+      new Chart(document.getElementById("statusChart"), {
+      type: "bar",
+      data: {
+      labels: ["Success","Rollback","Failed"],
+      datasets: [{
+      data: [{{success}},{{rollback}},{{failed}}]
+      }]
+      }
+      });
 
-    new Chart(document.getElementById('statusChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Success','Rollback','Failed'],
-            datasets: [{
-                data: [success, rollback, failed],
-                backgroundColor: ['#22c55e','#ef4444','#9ca3af']
-            }]
-        }
-    });
+      /* TIME LINE */
+      new Chart(document.getElementById("timeChart"), {
+      type: "line",
+      data: {
+      labels: {{ times|tojson }},
+      datasets: [{
+      label:"Execution Time",
+      data: {{ times|tojson }},
+      fill:false
+      }]
+      }
+      });
 
-    new Chart(document.getElementById('timeChart'), {
-        type: 'line',
-        data: {
-            labels: times.map((_, index) => index + 1),
-            datasets: [{
-                label: 'Execution Time (sec)',
-                data: times,
-                borderColor: '#2563eb',
-                backgroundColor: 'rgba(37,99,235,0.2)',
-                fill: true,
-                tension: 0.3
-            }]
-        }
-    });
-</script>
+      /* REPO RISK COMPARISON */
+      new Chart(document.getElementById("repoChart"), {
+      type: "bar",
+      data: {
+      labels: {{ repo_ranking | map(attribute='repo') | list | tojson }},
+      datasets: [{
+      label:"Failures",
+      data: {{ repo_ranking | map(attribute='fail') | list | tojson or [0] }}
+      }]
+      }
+      });
 
-</body>
+      /* USER FAILURE COMPARISON (ADMIN ONLY) */
+      {% if role != "user" %}
+      new Chart(document.getElementById("userChart"), {
+      type: "bar",
+      data: {
+      labels: {{ user_stats.keys() | list | tojson }},
+      datasets: [{
+      label:"Failures per User",
+      data: {{ user_stats.values() | map(attribute='fail') | list | tojson }}
+      }]
+      }
+      });
+      {% endif %}
+    </script>
+  </body>
 </html>

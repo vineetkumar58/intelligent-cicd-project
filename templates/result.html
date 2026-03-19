@@ -1,0 +1,149 @@
+<!DOCTYPE html> 
+<html>
+<head>
+    <title>Deployment Result</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 35px;
+            border-radius: 12px;
+            width: 460px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .status {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .low { color: #2ecc71; }
+        .medium { color: #f1c40f; }
+        .high { color: #e74c3c; }
+        .success { color: #2ecc71; }
+        .fail { color: #e74c3c; }
+
+        .error-box {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(231, 76, 60, 0.15);
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: left;
+            max-height: 140px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            margin: 8px;
+            padding: 10px 18px;
+            background: #3498db;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .link-box {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            word-break: break-all;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>🚀 Deployment Result</h2>
+
+    <p class="status 
+        {% if level == 'LOW' %}low
+        {% elif level == 'MEDIUM' %}medium
+        {% elif level == 'HIGH' %}high
+        {% endif %}">
+        Risk Level: {{ level }}
+    </p>
+
+    <p class="status 
+        {% if 'FAILED' in status or 'ERROR' in status or 'UNSUPPORTED' in status %}fail
+        {% else %}success
+        {% endif %}">
+        Status: {{ status }}
+    </p>
+
+    <p class="status">Execution Time: {{ time }} sec</p>
+
+    {% if "LIVE" in status %}
+    <div class="link-box" id="appLink">
+        {{ status.split('→')[1].strip() }}
+    </div>
+
+    <div class="buttons">
+        <button class="btn" onclick="openApp()">🌐 Open App</button>
+        <button class="btn" onclick="copyLink()">📋 Copy URL</button>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="error-box">
+        <strong>Error / Build Log:</strong><br>
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="buttons">
+        <a href="/" class="btn">🏠 Home</a>
+        <a href="/dashboard" class="btn">📊 Dashboard</a>
+        <a href="/logout" class="btn">🚪 Logout</a>
+    </div>
+</div>
+
+<script>
+{% if "LIVE" in status %}
+    let url = "{{ status.split('→')[1].strip() }}";
+
+    // 🔥 Auto open
+    window.open(url, "_blank");
+
+    function openApp(){
+        window.open(url, "_blank");
+    }
+
+    function copyLink(){
+        navigator.clipboard.writeText(url);
+        alert("URL copied!");
+    }
+{% endif %}
+</script>
+
+</body>
+</html>

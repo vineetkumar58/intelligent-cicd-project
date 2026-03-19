@@ -6,7 +6,8 @@ __pycache__/
 venv/
 
 # Runtime generated folders
-cloned_repo/
+cloned_repo_*/
+cloned_repo
 
 # Deployment state files
 deployment_history.json
@@ -15,3 +16,6 @@ last_state.json
 # OS files
 .DS_Store
 Thumbs.db
+
+logs.txt
+*.db

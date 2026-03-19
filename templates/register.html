@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Register - Intelligent CI/CD</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:linear-gradient(135deg,#020617,#0f172a);
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+}
+
+/* CARD */
+
+.register-box{
+background:#1e293b;
+padding:40px;
+border-radius:12px;
+width:350px;
+box-shadow:0 15px 40px rgba(0,0,0,0.5);
+text-align:center;
+}
+
+.register-box h2{
+margin-bottom:30px;
+}
+
+/* INPUT */
+
+input{
+width:100%;
+padding:12px;
+margin:10px 0;
+border:none;
+border-radius:6px;
+background:#334155;
+color:white;
+font-size:14px;
+}
+
+/* BUTTON */
+
+button{
+width:100%;
+padding:12px;
+background:#22c55e;
+border:none;
+border-radius:6px;
+font-size:16px;
+color:black;
+font-weight:bold;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+/* LINK */
+
+.login{
+margin-top:15px;
+font-size:14px;
+}
+
+.login a{
+color:#38bdf8;
+text-decoration:none;
+}
+
+/* LOGO */
+
+.logo{
+font-size:20px;
+margin-bottom:10px;
+color:#38bdf8;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="register-box">
+
+<div class="logo">Intelligent CI/CD</div>
+
+<h2>Create Account</h2>
+
+<form method="POST">
+
+<input type="text" name="username" placeholder="Username" required>
+
+<input type="password" name="password" placeholder="Password" required>
+
+<button type="submit">Register</button>
+
+</form>
+
+<div class="login">
+Already have an account?  
+<a href="/login">Login</a>
+</div>
+
+</div>
+
+</body>
+</html>

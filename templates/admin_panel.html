@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Admin Panel</title>
+
+    <style>
+      body {
+        font-family: Arial;
+        background: linear-gradient(135deg, #0f1b2d, #1c2e4a);
+        color: white;
+        margin: 0;
+      }
+
+      .container {
+        width: 85%;
+        margin: auto;
+        margin-top: 40px;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      h2 {
+        margin-top: 40px;
+        text-align: center;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: white;
+        font-size: 14px;
+        transition: 0.3s;
+      }
+
+      .create {
+        background: #27ae60;
+      }
+      .create:hover {
+        background: #1e8449;
+      }
+
+      .logout {
+        background: #e74c3c;
+      }
+      .logout:hover {
+        background: #c0392b;
+      }
+
+      .home {
+        background: #3498db;
+      }
+      .home:hover {
+        background: #2980b9;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      th,
+      td {
+        padding: 14px;
+        text-align: center;
+      }
+
+      th {
+        background: #16233a;
+      }
+
+      tr:nth-child(even) {
+        background: #24344f;
+      }
+
+      tr:hover {
+        background: #2f466a;
+      }
+
+      .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: white;
+        font-size: 13px;
+        margin-right: 6px;
+        transition: 0.3s;
+      }
+
+      .promote {
+        background: #3498db;
+      }
+      .promote:hover {
+        background: #2980b9;
+      }
+
+      .delete {
+        background: #e74c3c;
+      }
+      .delete:hover {
+        background: #c0392b;
+      }
+
+      .role {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+
+      .user {
+        background: #7f8c8d;
+      }
+      .admin {
+        background: #f39c12;
+      }
+      .superadmin {
+        background: #9b59b6;
+      }
+
+      /* status colors */
+      .status-running {
+        color: #2ecc71;
+        font-weight: bold;
+      }
+
+      .status-stopped {
+        color: #e74c3c;
+        font-weight: bold;
+      }
+
+      .empty {
+        padding: 20px;
+        color: #aaa;
+      }
+
+      .create {
+        background: #27ae60;
+      }
+      
+      .create:hover {
+        background: #1e8449;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <div>
+          <a href="/" class="btn home">🏠 Home</a>
+          <a href="/create-admin" class="btn create">➕ Create Admin</a>
+        </div>
+
+        <a href="/logout" class="btn logout">🚪 Logout</a>
+      </div>
+
+      <h1>👑 Admin Management Panel</h1>
+
+      <!-- USERS -->
+      <table>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Actions</th>
+        </tr>
+
+        {% for user in users %}
+        <tr>
+          <td>{{ user[0] }}</td>
+          <td>{{ user[1] }}</td>
+
+          <td>
+            <span class="role {{ user[2] }}"> {{ user[2] }} </span>
+          </td>
+
+          <td>
+            {% if user[2] == "user" %}
+            <a
+              href="/promote/{{ user[0] }}"
+              onclick="return confirm('Promote this user to ADMIN?');"
+              class="action-btn promote"
+              >⬆ Promote</a
+            >
+            {% endif %} {% if user[1] != "vineet" %}
+            <a
+              href="/delete-user/{{ user[0] }}"
+              onclick="return confirm('Delete this user permanently?');"
+              class="action-btn delete"
+              >🗑 Delete</a
+            >
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      <!-- CONTAINERS -->
+      <h2>🐳 Containers (Running + Exited)</h2>
+
+      <table>
+        <tr>
+          <th>Name</th>
+          <th>Ports</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+
+        {% if containers %} {% for c in containers %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.ports if c.ports else "-" }}</td>
+
+          <td>
+            {% if "Up" in c.status %}
+            <span class="status-running">🟢 {{ c.status }}</span>
+            {% else %}
+            <span class="status-stopped">🔴 {{ c.status }}</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if "Up" in c.status %}
+
+            <!-- STOP (only if running) -->
+            <a
+              href="/stop-container/{{ c.name }}"
+              onclick="return confirm('Stop this container?');"
+              class="action-btn promote"
+              >⏹ Stop</a
+            >
+
+            {% else %}
+
+            <!-- START (only if stopped) -->
+            <a
+              href="/start-container/{{ c.name }}"
+              onclick="return confirm('Start this container?');"
+              class="action-btn create"
+              >▶ Start</a
+            >
+
+            {% endif %}
+
+            <!-- REMOVE (always visible) -->
+            <a
+              href="/remove-container/{{ c.name }}"
+              onclick="return confirm('Remove this container?');"
+              class="action-btn delete"
+              >🗑 Remove</a
+            >
+          </td>
+        </tr>
+        {% endfor %} {% else %}
+        <tr>
+          <td colspan="4" class="empty">No containers found 🚫</td>
+        </tr>
+        {% endif %}
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>System Control</title>
+
+<style>
+body{
+background:#0f2027;
+color:white;
+font-family:Segoe UI;
+margin:0;
+}
+
+.nav{
+padding:15px;
+background:#111;
+display:flex;
+justify-content:space-between;
+}
+
+.container{
+padding:20px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid rgba(255,255,255,0.1);
+text-align:center;
+}
+
+.btn{
+padding:6px 12px;
+border-radius:6px;
+text-decoration:none;
+color:white;
+margin:3px;
+display:inline-block;
+}
+
+.stop{background:#f39c12;}
+.delete{background:#e74c3c;}
+
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+<div>⚙️ System Control</div>
+<div>
+<a href="/">Home</a>
+<a href="/dashboard">Dashboard</a>
+<a href="/logout">Logout</a>
+</div>
+</div>
+
+<div class="container">
+
+<h2>Running Containers</h2>
+
+<table>
+<tr>
+<th>Name</th>
+<th>Ports</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+
+{% for c in containers %}
+<tr>
+<td>{{c.name}}</td>
+<td>{{c.ports}}</td>
+<td>{{c.status}}</td>
+<td>
+<a class="btn stop" href="/stop-container/{{c.name}}">Stop</a>
+<a class="btn delete" href="/remove-container/{{c.name}}">Delete</a>
+</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+
+</body>
+</html>

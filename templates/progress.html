@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Deployment Progress</title>
+
+    <style>
+      body {
+        background: #0f1b2d;
+        color: white;
+        font-family: Arial;
+        text-align: center;
+        padding-top: 50px;
+      }
+
+      .log-box {
+        margin-top: 30px;
+        background: #000;
+        padding: 20px;
+        height: 300px;
+        overflow-y: auto;
+        border-radius: 12px;
+        text-align: left;
+        color: #00ffcc;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        border: 1px solid #00ffcc33;
+        box-shadow: 0 0 15px rgba(0, 255, 200, 0.2);
+      }
+
+      .cursor {
+        display: inline-block;
+        width: 10px;
+        height: 16px;
+        background: #00ffcc;
+        animation: blink 1s infinite;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+    </style>
+
+    <script>
+      window.onload = function () {
+
+        function loadLogs() {
+          fetch("/logs")
+            .then((res) => res.text())
+            .then((data) => {
+              let box = document.getElementById("logBox");
+
+              let formatted = data
+                .split("\n")
+                .map((line) => (line.trim() ? "➜ " + line : ""))
+                .join("\n");
+
+              box.innerText = formatted;
+              box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        // 🔥 initial load
+        loadLogs();
+
+        // 🔁 live polling
+        let interval = setInterval(loadLogs, 1000);
+
+        // 🔥 backend execution
+        fetch("/run-analysis", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            repo_url: "{{ repo_url }}",
+          }),
+        })
+          .then((res) => res.text())
+          .then((html) => {
+            clearInterval(interval); // stop polling
+            document.open();
+            document.write(html);
+            document.close();
+          })
+          .catch((err) => {
+            alert("Pipeline failed: " + err);
+          });
+      };
+    </script>
+  </head>
+
+  <body>
+    <h1>🚀 CI/CD Pipeline Running...</h1>
+
+    <!-- 🔥 LOG BOX -->
+    <div class="log-box" id="logBox">Loading logs...</div>
+
+    <!-- 🔥 CURSOR -->
+    <div style="text-align:left; margin-left:20px; margin-top:5px;">
+      <span class="cursor"></span>
+    </div>
+  </body>
+</html>

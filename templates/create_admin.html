@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Create Admin</title>
+
+<style>
+
+body{
+background:#0f1b2d;
+font-family:Arial;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:#1e2b3f;
+padding:40px;
+border-radius:10px;
+width:350px;
+text-align:center;
+}
+
+input{
+width:100%;
+padding:10px;
+margin:10px 0;
+border:none;
+border-radius:6px;
+}
+
+button{
+width:100%;
+padding:10px;
+border:none;
+background:#27ae60;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#219150;
+}
+
+a{
+display:block;
+margin-top:15px;
+color:#3498db;
+text-decoration:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Create Admin</h2>
+
+<form method="POST"
+onsubmit="return confirm('Create new ADMIN account?')">
+
+<input name="username" placeholder="Admin Username" required>
+<input name="password" type="password" placeholder="Password" required>
+
+<button>Create Admin</button>
+
+</form>
+
+<a href="/admin-panel">Back to Admin Panel</a>
+
+</div>
+
+</body>
+</html>
