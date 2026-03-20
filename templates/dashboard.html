@@ -86,6 +86,40 @@
       canvas {
         max-height: 300px !important;
       }
+
+      /* 🔥 NEW FILTER STYLE */
+      .filter-box {
+        margin-bottom: 15px;
+      }
+
+      .filter-box input,
+      .filter-box select {
+        padding: 8px;
+        margin-right: 10px;
+        border-radius: 6px;
+        border: none;
+        background: #1e2b3f;
+        color: white;
+      }
+
+      .filter-box button {
+        padding: 8px 12px;
+        background: #3498db;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        cursor: pointer;
+      }
+
+      .filter-box button:hover {
+        background: #2980b9;
+      }
+
+      .filter-box a {
+        margin-left: 10px;
+        color: #e74c3c;
+        text-decoration: none;
+      }
     </style>
   </head>
 
@@ -155,6 +189,42 @@
       <div class="table">
         <h3>Deployment History</h3>
 
+        <!-- 🔥 FILTER SECTION -->
+        <form method="GET" class="filter-box">
+          <input
+            type="text"
+            name="repo"
+            placeholder="Search by repo"
+            value="{{ repo_filter or '' }}"
+          />
+
+          <input
+            type="text"
+            name="user"
+            placeholder="Search by user"
+            value="{{ user_filter or '' }}"
+          />
+
+          <select name="risk">
+            <option value="">All Risk</option>
+
+            <option value="LOW" {% if risk_filter == 'LOW' %}selected{% endif %}>
+              LOW
+            </option>
+
+            <option value="MEDIUM" {% if risk_filter == 'MEDIUM' %}selected{% endif %}>
+              MEDIUM
+            </option>
+
+            <option value="HIGH" {% if risk_filter == 'HIGH' %}selected{% endif %}>
+              HIGH
+            </option>
+          </select>
+
+          <button type="submit">🔍 Filter</button>
+          <a href="/dashboard">Reset</a>
+        </form>
+
         <table>
           <tr>
             <th>Repo</th>
@@ -177,7 +247,6 @@
 
     <script>
 
-      /* RISK PIE */
       new Chart(document.getElementById("riskChart"), {
       type: "pie",
       data: {
@@ -188,7 +257,6 @@
       }
       });
 
-      /* STATUS BAR */
       new Chart(document.getElementById("statusChart"), {
       type: "bar",
       data: {
@@ -199,7 +267,6 @@
       }
       });
 
-      /* TIME LINE */
       new Chart(document.getElementById("timeChart"), {
       type: "line",
       data: {
@@ -212,7 +279,6 @@
       }
       });
 
-      /* REPO RISK COMPARISON */
       new Chart(document.getElementById("repoChart"), {
       type: "bar",
       data: {
@@ -224,7 +290,6 @@
       }
       });
 
-      /* USER FAILURE COMPARISON (ADMIN ONLY) */
       {% if role != "user" %}
       new Chart(document.getElementById("userChart"), {
       type: "bar",

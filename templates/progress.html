@@ -1,105 +1,205 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Deployment Progress</title>
+<head>
+<title>Deployment Progress</title>
 
-    <style>
-      body {
-        background: #0f1b2d;
-        color: white;
-        font-family: Arial;
-        text-align: center;
-        padding-top: 50px;
-      }
+<style>
 
-      .log-box {
-        margin-top: 30px;
-        background: #000;
-        padding: 20px;
-        height: 300px;
-        overflow-y: auto;
-        border-radius: 12px;
-        text-align: left;
-        color: #00ffcc;
-        font-family: "Courier New", monospace;
-        font-size: 14px;
-        border: 1px solid #00ffcc33;
-        box-shadow: 0 0 15px rgba(0, 255, 200, 0.2);
-      }
+/* 🔥 BACKGROUND */
+body{
+margin:0;
+font-family:"Segoe UI",sans-serif;
+background:radial-gradient(circle at top,#1e293b,#020617);
+color:white;
+}
 
-      .cursor {
-        display: inline-block;
-        width: 10px;
-        height: 16px;
-        background: #00ffcc;
-        animation: blink 1s infinite;
-      }
+/* 🔥 HEADER */
+.header{
+text-align:center;
+padding:30px 20px 10px;
+}
 
-      @keyframes blink {
-        50% {
-          opacity: 0;
-        }
-      }
-    </style>
+.header h1{
+margin:0;
+font-size:28px;
+font-weight:600;
+}
 
-    <script>
-      window.onload = function () {
+.sub{
+color:#94a3b8;
+font-size:13px;
+margin-top:5px;
+}
 
-        function loadLogs() {
-          fetch("/logs")
-            .then((res) => res.text())
-            .then((data) => {
-              let box = document.getElementById("logBox");
+/* 🔥 CONTAINER */
+.container{
+width:85%;
+margin:0 auto;
+}
 
-              let formatted = data
-                .split("\n")
-                .map((line) => (line.trim() ? "➜ " + line : ""))
-                .join("\n");
+/* 🔥 LOG CARD */
+.log-card{
+margin-top:20px;
+background:rgba(0,0,0,0.8);
+border-radius:16px;
+padding:18px;
+box-shadow:0 25px 60px rgba(0,0,0,0.7);
+border:1px solid rgba(56,189,248,0.2);
+}
 
-              box.innerText = formatted;
-              box.scrollTop = box.scrollHeight;
-            });
-        }
+/* 🔥 TERMINAL HEADER */
+.terminal-header{
+display:flex;
+align-items:center;
+gap:8px;
+margin-bottom:12px;
+}
 
-        // 🔥 initial load
-        loadLogs();
+.dot{
+width:10px;
+height:10px;
+border-radius:50%;
+}
 
-        // 🔁 live polling
-        let interval = setInterval(loadLogs, 1000);
+.red{background:#ff5f56;}
+.yellow{background:#ffbd2e;}
+.green{background:#27c93f;}
 
-        // 🔥 backend execution
-        fetch("/run-analysis", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            repo_url: "{{ repo_url }}",
-          }),
-        })
-          .then((res) => res.text())
-          .then((html) => {
-            clearInterval(interval); // stop polling
-            document.open();
-            document.write(html);
-            document.close();
-          })
-          .catch((err) => {
-            alert("Pipeline failed: " + err);
-          });
-      };
-    </script>
-  </head>
+.terminal-title{
+margin-left:10px;
+font-size:13px;
+color:#94a3b8;
+}
 
-  <body>
-    <h1>🚀 CI/CD Pipeline Running...</h1>
+/* 🔥 LOG BOX */
+.log-box{
+height:380px;
+overflow-y:auto;
+text-align:left;
+font-family:"Courier New",monospace;
+font-size:14px;
+color:#00ffcc;
+white-space:pre-wrap;
+padding-right:5px;
+}
 
-    <!-- 🔥 LOG BOX -->
-    <div class="log-box" id="logBox">Loading logs...</div>
+/* 🔥 SCROLLBAR */
+.log-box::-webkit-scrollbar{
+width:6px;
+}
+.log-box::-webkit-scrollbar-thumb{
+background:#38bdf8;
+border-radius:4px;
+}
 
-    <!-- 🔥 CURSOR -->
-    <div style="text-align:left; margin-left:20px; margin-top:5px;">
-      <span class="cursor"></span>
-    </div>
-  </body>
+/* 🔥 CURSOR */
+.cursor{
+display:inline-block;
+width:8px;
+height:14px;
+background:#00ffcc;
+animation:blink 1s infinite;
+margin-left:5px;
+}
+
+@keyframes blink{
+50%{opacity:0;}
+}
+
+/* 🔥 STATUS */
+.status{
+margin-top:12px;
+font-size:13px;
+color:#facc15;
+}
+
+</style>
+
+<script>
+window.onload = function () {
+
+function loadLogs() {
+fetch("/logs")
+.then((res) => res.text())
+.then((data) => {
+let box = document.getElementById("logBox");
+
+let formatted = data
+.split("\n")
+.map((line) => (line.trim() ? "➜ " + line : ""))
+.join("\n");
+
+box.innerText = formatted;
+box.scrollTop = box.scrollHeight;
+});
+}
+
+// 🔥 initial load
+loadLogs();
+
+// 🔁 polling
+let interval = setInterval(loadLogs, 1000);
+
+// 🔥 backend call (UNCHANGED)
+fetch("/run-analysis", {
+method: "POST",
+headers: {
+"Content-Type": "application/x-www-form-urlencoded",
+},
+body: new URLSearchParams({
+repo_url: "{{ repo_url }}",
+}),
+})
+.then((res) => res.text())
+.then((html) => {
+clearInterval(interval);
+document.open();
+document.write(html);
+document.close();
+})
+.catch((err) => {
+alert("Pipeline failed: " + err);
+});
+};
+</script>
+
+</head>
+
+<body>
+
+<!-- 🔥 HEADER -->
+<div class="header">
+<h1>🚀 CI/CD Pipeline Running</h1>
+<div class="sub">Streaming live deployment logs...</div>
+</div>
+
+<div class="container">
+
+<!-- 🔥 TERMINAL CARD -->
+<div class="log-card">
+
+<div class="terminal-header">
+<div class="dot red"></div>
+<div class="dot yellow"></div>
+<div class="dot green"></div>
+<div class="terminal-title">live-logs.sh</div>
+</div>
+
+<div class="log-box" id="logBox">
+Initializing pipeline...
+</div>
+
+<div>
+<span class="cursor"></span>
+</div>
+
+<div class="status">
+⚡ Running... do not close this page
+</div>
+
+</div>
+
+</div>
+
+</body>
 </html>

@@ -7,47 +7,159 @@
 
 body{
 margin:0;
-font-family:Arial;
-background:#0f1b2d;
+font-family:"Segoe UI",sans-serif;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 color:white;
 }
 
+/* NAVBAR */
 .topbar{
 display:flex;
 justify-content:space-between;
-padding:15px 30px;
-background:#16233a;
+align-items:center;
+padding:15px 40px;
+background:rgba(255,255,255,0.05);
+backdrop-filter:blur(10px);
+box-shadow:0 4px 20px rgba(0,0,0,0.3);
 }
 
-a{
+.logo{
+font-weight:bold;
+font-size:18px;
+color:#38bdf8;
+}
+
+.nav-links a{
 color:white;
 text-decoration:none;
-margin-left:15px;
-}
-
-.container{
-text-align:center;
-margin-top:120px;
-}
-
-input{
-width:400px;
-padding:12px;
-border:none;
+margin-left:20px;
+padding:6px 12px;
 border-radius:6px;
+transition:0.3s;
 }
 
-button{
-padding:12px 25px;
+.nav-links a:hover{
+background:rgba(255,255,255,0.1);
+}
+
+/* MAIN CONTAINER */
+.container{
+display:flex;
+justify-content:center;
+align-items:center;
+height:80vh;
+}
+
+/* CARD */
+.card{
+background:rgba(255,255,255,0.05);
+padding:40px;
+border-radius:15px;
+width:500px;
+text-align:center;
+box-shadow:0 15px 40px rgba(0,0,0,0.4);
+backdrop-filter:blur(12px);
+}
+
+/* TITLE */
+.card h1{
+margin-bottom:10px;
+font-size:28px;
+}
+
+.subtitle{
+font-size:14px;
+color:#94a3b8;
+margin-bottom:30px;
+}
+
+/* INPUT */
+input{
+width:100%;
+padding:14px;
 border:none;
-background:#3498db;
+border-radius:8px;
+background:#1e293b;
 color:white;
+font-size:14px;
+outline:none;
+transition:0.3s;
+}
+
+input:focus{
+box-shadow:0 0 0 2px #38bdf8;
+}
+
+/* BUTTON */
+button{
+margin-top:20px;
+width:100%;
+padding:14px;
+border:none;
+border-radius:8px;
+background:linear-gradient(90deg,#38bdf8,#0ea5e9);
+color:black;
+font-weight:bold;
+font-size:15px;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.03);
+box-shadow:0 10px 25px rgba(56,189,248,0.4);
+}
+
+/* ROLE BADGE */
+.role-badge{
+margin-top:15px;
+font-size:13px;
+padding:5px 10px;
+border-radius:6px;
+display:inline-block;
+}
+
+.user{background:#7f8c8d;}
+.admin{background:#f39c12;}
+.superadmin{background:#9b59b6;}
+
+/* 🔥 MODAL */
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.7);
+justify-content:center;
+align-items:center;
+}
+
+.modal-box{
+background:#1e293b;
+padding:25px;
+border-radius:10px;
+text-align:center;
+width:300px;
+}
+
+.modal-actions button{
+margin:10px;
+padding:8px 15px;
+border:none;
 border-radius:6px;
 cursor:pointer;
 }
 
-button:hover{
-background:#2980b9;
+.yes-btn{
+background:#22c55e;
+color:white;
+}
+
+.no-btn{
+background:#ef4444;
+color:white;
 }
 
 </style>
@@ -56,15 +168,18 @@ background:#2980b9;
 
 <body>
 
+<!-- NAVBAR -->
 <div class="topbar">
 
-<div>
-<b>Intelligent CI/CD</b>
-</div>
+<div class="logo">🚀 Intelligent CI/CD</div>
 
-<div>
+<div class="nav-links">
 
 <a href="/dashboard">Dashboard</a>
+
+{% if role == "admin" or role == "superadmin" %}
+<a href="/system-control">System Control</a>
+{% endif %}
 
 {% if role == "superadmin" %}
 <a href="/admin-panel">Admin Panel</a>
@@ -77,22 +192,60 @@ background:#2980b9;
 </div>
 
 
+<!-- MAIN -->
 <div class="container">
 
-<h1>Deploy Repository</h1>
+<div class="card">
 
-<form action="/analyze" method="POST"
-onsubmit="return confirm('Start CI/CD deployment for this repository?')">
+<h1>Deploy Repository</h1>
+<div class="subtitle">Automated risk-aware CI/CD deployment system</div>
+
+<!-- 🔥 UPDATED FORM -->
+<form action="/analyze" method="POST" id="deployForm">
 
 <input name="repo_url" placeholder="Enter GitHub Repo URL" required>
 
-<br><br>
-
-<button>Analyze & Deploy</button>
+<button type="button" onclick="openModal()">🚀 Analyze & Deploy</button>
 
 </form>
 
+<!-- ROLE INDICATOR -->
+{% if role %}
+<div class="role-badge {{ role }}">
+Logged in as: {{ role }}
 </div>
+{% endif %}
+
+</div>
+
+</div>
+
+<!-- 🔥 CUSTOM MODAL -->
+<div id="confirmModal" class="modal">
+  <div class="modal-box">
+    <h3>🚀 Start Deployment?</h3>
+    <p>Start CI/CD deployment for this repository?</p>
+
+    <div class="modal-actions">
+      <button class="yes-btn" onclick="submitForm()">Yes</button>
+      <button class="no-btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(){
+  document.getElementById("confirmModal").style.display = "flex";
+}
+
+function closeModal(){
+  document.getElementById("confirmModal").style.display = "none";
+}
+
+function submitForm(){
+  document.getElementById("deployForm").submit();
+}
+</script>
 
 </body>
 </html>

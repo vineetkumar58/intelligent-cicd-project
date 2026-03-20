@@ -9,6 +9,7 @@ import platform
 
 from flask import Flask, render_template, request, redirect, session
 from git import Repo
+from flask import request
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
@@ -85,6 +86,9 @@ def run_cmd(cmd, cwd=None):
         text=True
     )
 
+def is_docker_running():
+    result = run_cmd(["docker", "info"])
+    return result.returncode == 0
 
 def stop_container(name):
     run_cmd(["docker", "rm", "-f", name])
@@ -192,9 +196,18 @@ CMD ["sh","-c","python app.py --host=0.0.0.0 || python main.py --host=0.0.0.0 ||
         content = f"""FROM {platform_flag} node:18-bullseye
 WORKDIR /app
 COPY . .
+
 RUN npm install || true
+
+# Try building if it's a frontend app
+RUN npm run build || true
+
+# install serve globally (for frontend apps)
+RUN npm install -g serve || true
+
 EXPOSE 3000
-CMD ["sh","-c","npm start -- --host 0.0.0.0"]
+
+CMD ["sh","-c","npm start -- --host 0.0.0.0 || serve -s build -l 3000 || node server.js || tail -f /dev/null"]
 """
 
     elif project_type == "Static Website":
@@ -251,12 +264,17 @@ def deploy_main(port):
     new_port = get_next_port()
     internal_port = port.split(":")[1]
 
-    run_cmd([
+    write_log(f"🚀 Deploying on port {new_port}")
+
+    result = run_cmd([
         "docker", "run", "-d",
-        "--name", f"{MAIN_CONTAINER}_{new_port}",
+        "--name", f"{current_user()}_{MAIN_CONTAINER}_{new_port}",
         "-p", f"{new_port}:{internal_port}",
         IMAGE_NAME
     ])
+
+    write_log(result.stdout)
+    write_log(result.stderr)
 
     return f"LIVE → http://127.0.0.1:{new_port}"
 
@@ -270,12 +288,17 @@ def deploy_backup(port):
     new_port = get_next_port()
     internal_port = port.split(":")[1]
 
-    run_cmd([
+    write_log(f"↩️ Rolling back on port {new_port}")
+
+    result = run_cmd([
         "docker", "run", "-d",
-        "--name", f"{MAIN_CONTAINER}_{new_port}",
+        "--name", f"{current_user()}_{MAIN_CONTAINER}_{new_port}",
         "-p", f"{new_port}:{internal_port}",
         BACKUP_IMAGE
     ])
+
+    write_log(result.stdout)
+    write_log(result.stderr)
 
     return f"ROLLBACK → http://127.0.0.1:{new_port}"
 
@@ -517,8 +540,6 @@ def home():
 
 
 # ---------------- DASHBOARD ----------------
-# (YOUR FULL CODE SAME — ONLY CHANGES MARKED 🔥)
-
 # ---------------- DASHBOARD ----------------
 @app.route("/dashboard")
 def dashboard():
@@ -526,11 +547,26 @@ def dashboard():
     if not login_required():
         return redirect("/login")
 
+    # 🔥 NEW: GET FILTER VALUES
+    repo_filter = request.args.get("repo")
+    user_filter = request.args.get("user")
+    risk_filter = request.args.get("risk")
+
     history = load_history()
 
     # ✅ USER ISOLATION
     if current_role() == "user":
         history = [h for h in history if h.get("user") == current_user()]
+
+    # 🔥 APPLY FILTERS
+    if repo_filter:
+        history = [h for h in history if repo_filter.lower() in h.get("repo", "").lower()]
+
+    if user_filter:
+        history = [h for h in history if user_filter.lower() in h.get("user", "").lower()]
+
+    if risk_filter:
+        history = [h for h in history if h.get("risk") == risk_filter]
 
     total = len(history)
 
@@ -614,7 +650,12 @@ def dashboard():
 
         # 🔥 NEW
         user_stats=user_stats,
-        role=current_role()
+        role=current_role(),
+
+        # 🔥 FILTER VALUES (IMPORTANT)
+        repo_filter=repo_filter,
+        user_filter=user_filter,
+        risk_filter=risk_filter
     )
 
 # ---------------- ANALYZE ----------------
@@ -635,6 +676,16 @@ def run_analysis():
 
     start_time = time.time()
     repo_url = request.form["repo_url"]
+
+     # 🔥 NEW: CHECK DOCKER STATUS
+    if not is_docker_running():
+        return render_template(
+            "result.html",
+            level="N/A",
+            status="DOCKER NOT RUNNING",
+            time=0,
+            error="Please start Docker Desktop"
+        )
 
     # 🔥 CLEAR OLD LOGS
     open("logs.txt", "w").close()
@@ -765,7 +816,7 @@ def system_control():
     if current_role() not in ["admin", "superadmin"]:
         return "Access Denied"
 
-    result = run_cmd(["docker", "ps", "--format", "{{.Names}}|{{.Ports}}|{{.Status}}"])
+    result = run_cmd(["docker", "ps", "-a", "--format", "{{.Names}}|{{.Ports}}|{{.Status}}"])
 
     containers = []
 
@@ -787,7 +838,8 @@ def start_container_route(name):
         return "Access Denied"
 
     run_cmd(["docker", "start", name])
-    return redirect("/admin-panel")
+
+    return redirect(request.referrer or "/system-control")
 
 @app.route("/stop-container/<name>")
 def stop_container_route(name):
@@ -796,7 +848,8 @@ def stop_container_route(name):
         return "Access Denied"
 
     run_cmd(["docker", "stop", name])
-    return redirect("/system-control")
+
+    return redirect(request.referrer or "/system-control")
 
 
 @app.route("/remove-container/<name>")
@@ -806,7 +859,8 @@ def remove_container_route(name):
         return "Access Denied"
 
     run_cmd(["docker", "rm", "-f", name])
-    return redirect("/system-control")
+
+    return redirect(request.referrer or "/system-control")
 
 
 # ---------------- LOGOUT ----------------

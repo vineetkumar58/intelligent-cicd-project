@@ -1,91 +1,252 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<title>System Control</title>
+  <head>
+    <title>System Control</title>
 
-<style>
-body{
-background:#0f2027;
-color:white;
-font-family:Segoe UI;
-margin:0;
-}
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        color: white;
+      }
 
-.nav{
-padding:15px;
-background:#111;
-display:flex;
-justify-content:space-between;
-}
+      /* 🔥 NAVBAR */
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 40px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+      }
 
-.container{
-padding:20px;
-}
+      .logo {
+        font-size: 18px;
+        font-weight: bold;
+        color: #38bdf8;
+      }
 
-table{
-width:100%;
-border-collapse:collapse;
-}
+      .nav-links {
+        display: flex;
+        gap: 12px;
+      }
 
-th,td{
-padding:10px;
-border-bottom:1px solid rgba(255,255,255,0.1);
-text-align:center;
-}
+      .nav-btn {
+        padding: 8px 14px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: white;
+        background: rgba(255, 255, 255, 0.08);
+        transition: 0.3s;
+        font-size: 14px;
+      }
 
-.btn{
-padding:6px 12px;
-border-radius:6px;
-text-decoration:none;
-color:white;
-margin:3px;
-display:inline-block;
-}
+      .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
 
-.stop{background:#f39c12;}
-.delete{background:#e74c3c;}
+      .logout {
+        background: #e74c3c;
+      }
 
-</style>
-</head>
+      .logout:hover {
+        background: #c0392b;
+      }
 
-<body>
+      .container {
+        padding: 30px;
+      }
 
-<div class="nav">
-<div>⚙️ System Control</div>
-<div>
-<a href="/">Home</a>
-<a href="/dashboard">Dashboard</a>
-<a href="/logout">Logout</a>
-</div>
-</div>
+      h2 {
+        margin-bottom: 20px;
+      }
 
-<div class="container">
+      .table-box {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+      }
 
-<h2>Running Containers</h2>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
 
-<table>
-<tr>
-<th>Name</th>
-<th>Ports</th>
-<th>Status</th>
-<th>Actions</th>
-</tr>
+      th, td {
+        padding: 14px;
+        text-align: center;
+      }
 
-{% for c in containers %}
-<tr>
-<td>{{c.name}}</td>
-<td>{{c.ports}}</td>
-<td>{{c.status}}</td>
-<td>
-<a class="btn stop" href="/stop-container/{{c.name}}">Stop</a>
-<a class="btn delete" href="/remove-container/{{c.name}}">Delete</a>
-</td>
-</tr>
-{% endfor %}
+      th {
+        color: #94a3b8;
+        font-size: 14px;
+      }
 
-</table>
+      tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        transition: 0.2s;
+      }
 
-</div>
+      tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
 
-</body>
+      .btn {
+        padding: 6px 14px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: white;
+        font-size: 13px;
+        margin: 3px;
+        display: inline-block;
+        transition: 0.3s;
+      }
+
+      .start { background: #2ecc71; }
+      .start:hover { background: #27ae60; }
+
+      .stop { background: #f39c12; }
+      .stop:hover { background: #d68910; }
+
+      .delete { background: #e74c3c; }
+      .delete:hover { background: #c0392b; }
+
+      .status {
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+
+      .running { background: #2ecc71; }
+      .stopped { background: #7f8c8d; }
+
+      /* 🔥 MODAL */
+      .modal{
+        display:none;
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background:rgba(0,0,0,0.7);
+        justify-content:center;
+        align-items:center;
+      }
+
+      .modal-box{
+        background:#1e293b;
+        padding:25px;
+        border-radius:10px;
+        text-align:center;
+        width:300px;
+      }
+
+      .modal-actions button{
+        margin:10px;
+        padding:8px 15px;
+        border:none;
+        border-radius:6px;
+        cursor:pointer;
+      }
+
+      .yes-btn{ background:#22c55e; color:white; }
+      .no-btn{ background:#ef4444; color:white; }
+
+    </style>
+  </head>
+
+  <body>
+    <!-- 🔥 NAVBAR -->
+    <div class="nav">
+      <div class="logo">⚙️ System Control</div>
+
+      <div class="nav-links">
+        <a href="/" class="nav-btn">🏠 Home</a>
+        <a href="/dashboard" class="nav-btn">📊 Dashboard</a>
+        <a href="/logout" class="nav-btn logout">🚪 Logout</a>
+      </div>
+    </div>
+
+    <div class="container">
+      <h2>🐳 Containers (Running + Stopped)</h2>
+
+      <div class="table-box">
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>Ports</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+
+          {% for c in containers %}
+          <tr>
+            <td>{{c.name}}</td>
+            <td>{{c.ports}}</td>
+
+            <td>
+              {% if "Up" in c.status %}
+              <span class="status running">🟢 Running</span>
+              {% else %}
+              <span class="status stopped">⚫ Stopped</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if "Up" in c.status %}
+
+              <a href="/stop-container/{{c.name}}" onclick="openModal(this, 'Stop this container?')" class="btn stop">⏹ Stop</a>
+
+              {% else %}
+
+              <a href="/start-container/{{c.name}}" onclick="openModal(this, 'Start this container?')" class="btn start">▶ Start</a>
+
+              {% endif %}
+
+              <a href="/remove-container/{{c.name}}" onclick="openModal(this, 'Delete this container?')" class="btn delete">🗑 Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <!-- 🔥 MODAL -->
+    <div id="confirmModal" class="modal">
+      <div class="modal-box">
+        <h3>⚠ Confirm Action</h3>
+        <p id="modalText"></p>
+
+        <div class="modal-actions">
+          <button class="yes-btn" onclick="proceed()">Yes</button>
+          <button class="no-btn" onclick="closeModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let actionLink = null;
+
+      function openModal(el, text){
+        event.preventDefault();
+        actionLink = el.href;
+        document.getElementById("modalText").innerText = text;
+        document.getElementById("confirmModal").style.display = "flex";
+      }
+
+      function closeModal(){
+        document.getElementById("confirmModal").style.display = "none";
+      }
+
+      function proceed(){
+        window.location.href = actionLink;
+      }
+    </script>
+
+  </body>
 </html>
