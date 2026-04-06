@@ -24,6 +24,16 @@ HISTORY_FILE = "deployment_history.json"
 DB_FILE = "database.db"
 
 
+def get_clone_dir():
+    return f"cloned_repo_{current_user()}"
+
+def get_image_name():
+    return f"{current_user()}_image"
+
+def get_backup_image():
+    return f"{current_user()}_backup"
+
+
 # ---------------- DATABASE ----------------
 def get_db():
     return sqlite3.connect(DB_FILE, timeout=10, check_same_thread=False)
@@ -95,8 +105,9 @@ def stop_container(name):
 
 
 def safe_delete_clone():
-    if os.path.exists(CLONE_DIR):
-        shutil.rmtree(CLONE_DIR, onerror=remove_readonly)
+    clone_dir = get_clone_dir()
+    if os.path.exists(clone_dir):
+        shutil.rmtree(clone_dir, onerror=remove_readonly)
 
 
 # ---------------- NEW: DYNAMIC PORT ----------------
@@ -160,7 +171,9 @@ def get_docker_platform():
 
 # ---------------- PROJECT DETECTION ----------------
 def detect_project_type():
-    for root, dirs, files in os.walk(CLONE_DIR):
+    clone_dir = get_clone_dir()
+
+    for root, dirs, files in os.walk(clone_dir):
 
         if "requirements.txt" in files:
             return "Python", "5001:5000"
@@ -176,7 +189,8 @@ def detect_project_type():
 
 # ---------------- DOCKERFILE ----------------
 def generate_dockerfile(project_type):
-    dockerfile = os.path.join(CLONE_DIR, "Dockerfile")
+    clone_dir = get_clone_dir()
+    dockerfile = os.path.join(clone_dir, "Dockerfile")
 
     if os.path.exists(dockerfile):
         return True
@@ -240,29 +254,35 @@ CMD ["nginx", "-g", "daemon off;"]
 
 # ---------------- DOCKER ----------------
 def docker_build():
-    run_cmd(["docker", "rmi", "-f", IMAGE_NAME])
+    image = get_image_name()
+    clone_dir = get_clone_dir()
 
-    result = run_cmd(["docker", "build", "-t", IMAGE_NAME, "."], cwd=CLONE_DIR)
+    run_cmd(["docker", "rmi", "-f", image])
+
+    result = run_cmd(["docker", "build", "-t", image, "."], cwd=clone_dir)
 
     if result.returncode != 0:
-        result = run_cmd(["docker", "build", "-t", IMAGE_NAME, "."], cwd=CLONE_DIR)
+        result = run_cmd(["docker", "build", "-t", image, "."], cwd=clone_dir)
 
     return result.returncode == 0, result.stderr
 
 
 def backup_current_container():
+    backup_image = get_backup_image()
+
     running = run_cmd(
-        ["docker", "ps", "-q", "-f", f"name={MAIN_CONTAINER}"]
+        ["docker", "ps", "-q", "-f", f"name={current_user()}_{MAIN_CONTAINER}"]
     ).stdout.strip()
 
     if running:
-        run_cmd(["docker", "commit", MAIN_CONTAINER, BACKUP_IMAGE])
+        run_cmd(["docker", "commit", running, backup_image])
 
 
 # 🔥 UPDATED DEPLOY (MULTI PORT)
 def deploy_main(port):
     new_port = get_next_port()
     internal_port = port.split(":")[1]
+    image = get_image_name()
 
     write_log(f"🚀 Deploying on port {new_port}")
 
@@ -270,7 +290,7 @@ def deploy_main(port):
         "docker", "run", "-d",
         "--name", f"{current_user()}_{MAIN_CONTAINER}_{new_port}",
         "-p", f"{new_port}:{internal_port}",
-        IMAGE_NAME
+        image
     ])
 
     write_log(result.stdout)
@@ -280,7 +300,9 @@ def deploy_main(port):
 
 
 def deploy_backup(port):
-    exists = run_cmd(["docker", "images", "-q", BACKUP_IMAGE]).stdout.strip()
+    backup_image = get_backup_image()
+
+    exists = run_cmd(["docker", "images", "-q", backup_image]).stdout.strip()
 
     if not exists:
         return "BLOCKED (No stable version yet)"
@@ -294,7 +316,7 @@ def deploy_backup(port):
         "docker", "run", "-d",
         "--name", f"{current_user()}_{MAIN_CONTAINER}_{new_port}",
         "-p", f"{new_port}:{internal_port}",
-        BACKUP_IMAGE
+        backup_image
     ])
 
     write_log(result.stdout)
@@ -697,9 +719,10 @@ def run_analysis():
 
         # 🔥 AFTER CLONE
         write_log("📥 Cloning repository...")
-        Repo.clone_from(repo_url, CLONE_DIR)
+        clone_dir = get_clone_dir()
 
-        repo = Repo(CLONE_DIR)
+        Repo.clone_from(repo_url, clone_dir)
+        repo = Repo(clone_dir)
 
         commits = list(repo.iter_commits())
 
