@@ -845,8 +845,24 @@ def github_webhook():
     # only trigger on main branch push
     if data.get("ref") != "refs/heads/main":
         return "Ignored (not main branch)", 200
-
+    
     repo_url = data["repository"]["clone_url"]
+
+    # 🔍 find repo owner (user)
+    history = load_history()
+
+    repo_owner = None
+
+    for h in reversed(history):  # latest entry first
+        if h.get("repo") == repo_url:
+            repo_owner = h.get("user")
+            break
+
+    if not repo_owner:
+        write_log("❌ Webhook blocked (unknown repo)")
+        return "Repo not registered", 403
+    
+    session["username"] = repo_owner
 
     write_log("🔔 Webhook triggered")
     write_log(f"📦 Repo: {repo_url}")
@@ -877,7 +893,7 @@ def github_webhook():
 
         # 🔥 SAVE TO DASHBOARD
         save_history({
-            "user": "webhook",
+            "user": repo_owner,
             "repo": repo_url,
             "risk": "AUTO",
             "status": status,
