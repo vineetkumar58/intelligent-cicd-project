@@ -832,6 +832,67 @@ def logs():
     except:
         return "No logs yet"
     
+
+# ---------------- WEBHOOK ----------------
+@app.route("/webhook", methods=["POST"])
+def github_webhook():
+
+    if not is_docker_running():
+        return "Docker not running", 500
+
+    data = request.json
+
+    # only trigger on main branch push
+    if data.get("ref") != "refs/heads/main":
+        return "Ignored (not main branch)", 200
+
+    repo_url = data["repository"]["clone_url"]
+
+    write_log("🔔 Webhook triggered")
+    write_log(f"📦 Repo: {repo_url}")
+
+    try:
+        safe_delete_clone()
+
+        write_log("📥 Cloning (Webhook)...")
+        Repo.clone_from(repo_url, CLONE_DIR)
+
+        project_type, port = detect_project_type()
+
+        if project_type == "Unsupported":
+            write_log("❌ Unsupported project")
+            return "Unsupported", 200
+
+        generate_dockerfile(project_type)
+
+        write_log("🐳 Building (Webhook)...")
+        success, error = docker_build()
+
+        if not success:
+            write_log("❌ Build failed (Webhook)")
+            return "Build Failed", 500
+
+        write_log("🚀 Deploying (Webhook)...")
+        status = deploy_main(port)
+
+        # 🔥 SAVE TO DASHBOARD
+        save_history({
+            "user": "webhook",
+            "repo": repo_url,
+            "risk": "AUTO",
+            "status": status,
+            "time": 0
+        })
+
+        write_log("✅ Webhook deployment done")
+
+        return "Success", 200
+
+    except Exception as e:
+        write_log(f"❌ Webhook error: {str(e)}")
+        return "Error", 500
+    
+
 #--------------SYSTEM CONTROL---------
 @app.route("/system-control")
 def system_control():
