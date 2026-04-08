@@ -9,7 +9,6 @@ import platform
 
 from flask import Flask, render_template, request, redirect, session
 from git import Repo
-from flask import request
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
@@ -116,9 +115,20 @@ def get_next_port():
 
     while True:
         result = run_cmd(["docker", "ps", "--format", "{{.Ports}}"])
-        ports = result.stdout
+        ports = result.stdout.split()
 
-        if str(base) not in ports:
+        used = []
+
+        for p in ports:
+            if "->" in p:
+                try:
+                    host_part = p.split("->")[0]
+                    port_num = host_part.split(":")[-1]
+                    used.append(int(port_num))
+                except:
+                    pass
+
+        if base not in used:
             return base
 
         base += 1
@@ -176,14 +186,23 @@ def detect_project_type():
     for root, dirs, files in os.walk(clone_dir):
 
         if "requirements.txt" in files:
-            return "Python", "5001:5000"
+            return "Python", "5000"
 
         if "package.json" in files:
-            return "Node.js", "5001:3000"
+            return "Node.js", "3000"
 
         if any(f.endswith(".html") for f in files):
-            return "Static Website", "5001:80"
-
+            return "Static Website", "80"
+        
+        if any(f.endswith(".jar") for f in files):
+            return "Java", "8080"
+        
+        if any(f.endswith(".java") for f in files):
+            return "Java", "8080"
+        
+        if any(f.endswith(".cpp") for f in files):
+            return "C++", "0"
+        
     return "Unsupported", None
 
 
@@ -242,7 +261,31 @@ EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
 """
+    
+    elif project_type == "Java":
+        content = f"""FROM openjdk:17
+WORKDIR /app
+COPY . .
 
+# compile all java files
+RUN javac *.java || true
+
+EXPOSE 8080
+
+# try running jar OR main class
+CMD ["sh","-c","java Main || (ls *.jar 2>/dev/null | head -n 1 | xargs -r java -jar) || tail -f /dev/null"]
+"""  
+        
+    elif project_type == "C++":
+        content = f"""FROM gcc:latest
+WORKDIR /app
+COPY . .
+
+RUN g++ *.cpp -o app || true
+
+CMD ["sh","-c","./app || tail -f /dev/null"]
+"""
+        
     else:
         return False
 
@@ -272,16 +315,71 @@ def backup_current_container():
 
     running = run_cmd(
         ["docker", "ps", "-q", "-f", f"name={current_user()}_{MAIN_CONTAINER}"]
-    ).stdout.strip()
+    ).stdout.splitlines()
 
     if running:
-        run_cmd(["docker", "commit", running, backup_image])
+        container_id = running[-1]
+    
+        # check if container is running
+        status = run_cmd(
+            ["docker", "inspect", "-f", "{{.State.Running}}", container_id]
+        ).stdout.strip()
+    
+        if status == "true":
+            run_cmd(["docker", "commit", container_id, backup_image])
 
+
+def get_public_url(port):
+    try:
+        import requests
+        tunnels = requests.get("http://127.0.0.1:4040/api/tunnels").json()
+
+        for t in tunnels["tunnels"]:
+            if str(port) in t["config"]["addr"]:
+                return t["public_url"]
+
+    except Exception as e:
+        write_log(f"ngrok error: {str(e)}")
+
+    return None
+
+## ----ngrok -------
+def ensure_ngrok_tunnel(port):
+    try:
+        import requests
+
+        res = requests.get("http://127.0.0.1:4040/api/tunnels")
+
+        if res.status_code != 200:
+           return None
+
+        tunnels = res.json()
+
+        # check if tunnel already exists
+        for t in tunnels["tunnels"]:
+            if str(port) in t["config"]["addr"]:
+                return t["public_url"]
+
+        # 🔥 create new tunnel via ngrok API
+        res = requests.post(
+            "http://127.0.0.1:4040/api/tunnels",
+            json={"addr": port, "proto": "http"}
+        )
+
+        if res.status_code != 200:
+            return None
+
+        data = res.json()
+        return data.get("public_url")
+
+    except Exception as e:
+        write_log(f"ngrok tunnel error: {str(e)}")
+        return None
 
 # 🔥 UPDATED DEPLOY (MULTI PORT)
 def deploy_main(port):
     new_port = get_next_port()
-    internal_port = port.split(":")[1]
+    internal_port = port if port != "0" else None
     image = get_image_name()
 
     container_name = f"{current_user()}_{MAIN_CONTAINER}_{new_port}"
@@ -294,14 +392,21 @@ def deploy_main(port):
     result = run_cmd([
         "docker", "run", "-d",
         "--name", container_name,
-        "-p", f"{new_port}:{internal_port}",
+        *(["-p", f"{new_port}:{internal_port}"] if internal_port else []),
         image
     ])
 
     write_log(result.stdout)
     write_log(result.stderr)
 
-    return f"LIVE → http://127.0.0.1:{new_port}"
+    # 🔥 GET PUBLIC URL FROM NGROK
+    public_url = ensure_ngrok_tunnel(new_port)
+
+    if port == "0":
+       return "RUNNING (C++ CLI app - no web interface)"
+
+    url = public_url if public_url else f"http://127.0.0.1:{new_port}"
+    return f"LIVE → {url}"
 
 
 def deploy_backup(port):
@@ -313,20 +418,23 @@ def deploy_backup(port):
         return "BLOCKED (No stable version yet)"
 
     new_port = get_next_port()
-    internal_port = port.split(":")[1]
+    internal_port = port if port != "0" else None
 
     write_log(f"↩️ Rolling back on port {new_port}")
 
     result = run_cmd([
         "docker", "run", "-d",
         "--name", f"{current_user()}_{MAIN_CONTAINER}_{new_port}",
-        "-p", f"{new_port}:{internal_port}",
+        *(["-p", f"{new_port}:{internal_port}"] if internal_port else []),
         backup_image
     ])
 
     write_log(result.stdout)
     write_log(result.stderr)
 
+    if port == "0":
+       return "ROLLBACK → C++ CLI app (no web interface)"
+    
     return f"ROLLBACK → http://127.0.0.1:{new_port}"
 
 
@@ -719,7 +827,6 @@ def run_analysis():
     write_log("🚀 Starting Deployment...")
 
     try:
-        stop_container(MAIN_CONTAINER)
         safe_delete_clone()
 
         # 🔥 AFTER CLONE
