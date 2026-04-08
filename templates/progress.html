@@ -1,205 +1,199 @@
 <!doctype html>
 <html>
-<head>
-<title>Deployment Progress</title>
+  <head>
+    <title>Deployment Progress</title>
 
-<style>
+    <style>
+      /* 🔥 BACKGROUND */
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #1e293b, #020617);
+        color: white;
+      }
 
-/* 🔥 BACKGROUND */
-body{
-margin:0;
-font-family:"Segoe UI",sans-serif;
-background:radial-gradient(circle at top,#1e293b,#020617);
-color:white;
-}
+      /* 🔥 HEADER */
+      .header {
+        text-align: center;
+        padding: 30px 20px 10px;
+      }
 
-/* 🔥 HEADER */
-.header{
-text-align:center;
-padding:30px 20px 10px;
-}
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+      }
 
-.header h1{
-margin:0;
-font-size:28px;
-font-weight:600;
-}
+      .sub {
+        color: #94a3b8;
+        font-size: 13px;
+        margin-top: 5px;
+      }
 
-.sub{
-color:#94a3b8;
-font-size:13px;
-margin-top:5px;
-}
+      /* 🔥 CONTAINER */
+      .container {
+        width: 85%;
+        margin: 0 auto;
+      }
 
-/* 🔥 CONTAINER */
-.container{
-width:85%;
-margin:0 auto;
-}
+      /* 🔥 LOG CARD */
+      .log-card {
+        margin-top: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+      }
 
-/* 🔥 LOG CARD */
-.log-card{
-margin-top:20px;
-background:rgba(0,0,0,0.8);
-border-radius:16px;
-padding:18px;
-box-shadow:0 25px 60px rgba(0,0,0,0.7);
-border:1px solid rgba(56,189,248,0.2);
-}
+      /* 🔥 TERMINAL HEADER */
+      .terminal-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
 
-/* 🔥 TERMINAL HEADER */
-.terminal-header{
-display:flex;
-align-items:center;
-gap:8px;
-margin-bottom:12px;
-}
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
 
-.dot{
-width:10px;
-height:10px;
-border-radius:50%;
-}
+      .red {
+        background: #ff5f56;
+      }
+      .yellow {
+        background: #ffbd2e;
+      }
+      .green {
+        background: #27c93f;
+      }
 
-.red{background:#ff5f56;}
-.yellow{background:#ffbd2e;}
-.green{background:#27c93f;}
+      .terminal-title {
+        margin-left: 10px;
+        font-size: 13px;
+        color: #94a3b8;
+      }
 
-.terminal-title{
-margin-left:10px;
-font-size:13px;
-color:#94a3b8;
-}
+      /* 🔥 LOG BOX */
+      .log-box {
+        height: 380px;
+        overflow-y: auto;
+        text-align: left;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        color: #00ffcc;
+        white-space: pre-wrap;
+        padding-right: 5px;
+      }
 
-/* 🔥 LOG BOX */
-.log-box{
-height:380px;
-overflow-y:auto;
-text-align:left;
-font-family:"Courier New",monospace;
-font-size:14px;
-color:#00ffcc;
-white-space:pre-wrap;
-padding-right:5px;
-}
+      /* 🔥 SCROLLBAR */
+      .log-box::-webkit-scrollbar {
+        width: 6px;
+      }
+      .log-box::-webkit-scrollbar-thumb {
+        background: #38bdf8;
+        border-radius: 4px;
+      }
 
-/* 🔥 SCROLLBAR */
-.log-box::-webkit-scrollbar{
-width:6px;
-}
-.log-box::-webkit-scrollbar-thumb{
-background:#38bdf8;
-border-radius:4px;
-}
+      /* 🔥 CURSOR */
+      .cursor {
+        display: inline-block;
+        width: 8px;
+        height: 14px;
+        background: #00ffcc;
+        animation: blink 1s infinite;
+        margin-left: 5px;
+      }
 
-/* 🔥 CURSOR */
-.cursor{
-display:inline-block;
-width:8px;
-height:14px;
-background:#00ffcc;
-animation:blink 1s infinite;
-margin-left:5px;
-}
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
 
-@keyframes blink{
-50%{opacity:0;}
-}
+      /* 🔥 STATUS */
+      .status {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #facc15;
+      }
+    </style>
 
-/* 🔥 STATUS */
-.status{
-margin-top:12px;
-font-size:13px;
-color:#facc15;
-}
+    <script>
+      window.onload = function () {
+        function loadLogs() {
+          fetch("https://unled-predatorily-layla.ngrok-free.dev/logs")
+            .then((res) => res.text())
+            .then((data) => {
+              let box = document.getElementById("logBox");
 
-</style>
+              let formatted = data
+                .split("\n")
+                .map((line) => (line.trim() ? "➜ " + line : ""))
+                .join("\n");
 
-<script>
-window.onload = function () {
+              box.innerText = formatted;
+              box.scrollTop = box.scrollHeight;
+            });
+        }
 
-function loadLogs() {
-fetch("/logs")
-.then((res) => res.text())
-.then((data) => {
-let box = document.getElementById("logBox");
+        // 🔥 initial load
+        loadLogs();
 
-let formatted = data
-.split("\n")
-.map((line) => (line.trim() ? "➜ " + line : ""))
-.join("\n");
+        // 🔁 polling
+        let interval = setInterval(loadLogs, 1000);
 
-box.innerText = formatted;
-box.scrollTop = box.scrollHeight;
-});
-}
+        // 🔥 backend call (UNCHANGED)
+        fetch("https://unled-predatorily-layla.ngrok-free.dev/run-analysis", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            repo_url: "{{ repo_url }}",
+          }),
+        })
+          .then((res) => res.text())
+          .then((html) => {
+            clearInterval(interval);
+            document.open();
+            document.write(html);
+            document.close();
+          })
+          .catch((err) => {
+            alert("Pipeline failed: " + err);
+          });
+      };
+    </script>
+  </head>
 
-// 🔥 initial load
-loadLogs();
+  <body>
+    <!-- 🔥 HEADER -->
+    <div class="header">
+      <h1>🚀 CI/CD Pipeline Running</h1>
+      <div class="sub">Streaming live deployment logs...</div>
+    </div>
 
-// 🔁 polling
-let interval = setInterval(loadLogs, 1000);
+    <div class="container">
+      <!-- 🔥 TERMINAL CARD -->
+      <div class="log-card">
+        <div class="terminal-header">
+          <div class="dot red"></div>
+          <div class="dot yellow"></div>
+          <div class="dot green"></div>
+          <div class="terminal-title">live-logs.sh</div>
+        </div>
 
-// 🔥 backend call (UNCHANGED)
-fetch("/run-analysis", {
-method: "POST",
-headers: {
-"Content-Type": "application/x-www-form-urlencoded",
-},
-body: new URLSearchParams({
-repo_url: "{{ repo_url }}",
-}),
-})
-.then((res) => res.text())
-.then((html) => {
-clearInterval(interval);
-document.open();
-document.write(html);
-document.close();
-})
-.catch((err) => {
-alert("Pipeline failed: " + err);
-});
-};
-</script>
+        <div class="log-box" id="logBox">Initializing pipeline...</div>
 
-</head>
+        <div>
+          <span class="cursor"></span>
+        </div>
 
-<body>
-
-<!-- 🔥 HEADER -->
-<div class="header">
-<h1>🚀 CI/CD Pipeline Running</h1>
-<div class="sub">Streaming live deployment logs...</div>
-</div>
-
-<div class="container">
-
-<!-- 🔥 TERMINAL CARD -->
-<div class="log-card">
-
-<div class="terminal-header">
-<div class="dot red"></div>
-<div class="dot yellow"></div>
-<div class="dot green"></div>
-<div class="terminal-title">live-logs.sh</div>
-</div>
-
-<div class="log-box" id="logBox">
-Initializing pipeline...
-</div>
-
-<div>
-<span class="cursor"></span>
-</div>
-
-<div class="status">
-⚡ Running... do not close this page
-</div>
-
-</div>
-
-</div>
-
-</body>
+        <div class="status">⚡ Running... do not close this page</div>
+      </div>
+    </div>
+  </body>
 </html>

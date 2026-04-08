@@ -284,11 +284,16 @@ def deploy_main(port):
     internal_port = port.split(":")[1]
     image = get_image_name()
 
+    container_name = f"{current_user()}_{MAIN_CONTAINER}_{new_port}"
+
     write_log(f"🚀 Deploying on port {new_port}")
+
+    # 🔥 FIX: remove existing container if same name exists
+    run_cmd(["docker", "rm", "-f", container_name])
 
     result = run_cmd([
         "docker", "run", "-d",
-        "--name", f"{current_user()}_{MAIN_CONTAINER}_{new_port}",
+        "--name", container_name,
         "-p", f"{new_port}:{internal_port}",
         image
     ])
@@ -832,55 +837,63 @@ def logs():
     except:
         return "No logs yet"
     
-
-# ---------------- WEBHOOK ----------------
+#------------ WEBHOOK ------------
 @app.route("/webhook", methods=["POST"])
 def github_webhook():
 
+    # 🔥 CHECK DOCKER (important for local execution)
     if not is_docker_running():
+        write_log("❌ Docker not running (Webhook)")
         return "Docker not running", 500
 
     data = request.json
 
-    # only trigger on main branch push
+    # 🔥 ONLY MAIN BRANCH
     if data.get("ref") != "refs/heads/main":
         return "Ignored (not main branch)", 200
-    
+
     repo_url = data["repository"]["clone_url"]
 
-    # 🔍 find repo owner (user)
     history = load_history()
-
     repo_owner = None
 
-    for h in reversed(history):  # latest entry first
-        if h.get("repo") == repo_url:
+    # 🔥 FIND OWNER (who deployed this repo before)
+    for h in reversed(history):
+        if repo_url.replace(".git","") in h.get("repo",""):
             repo_owner = h.get("user")
             break
 
     if not repo_owner:
         write_log("❌ Webhook blocked (unknown repo)")
         return "Repo not registered", 403
-    
-    session["username"] = repo_owner
 
     write_log("🔔 Webhook triggered")
     write_log(f"📦 Repo: {repo_url}")
 
     try:
+        # 🔥 SAFE SESSION HANDLING
+        user_backup = session.get("username", None)
+        session["username"] = repo_owner
+
+        # 🔥 CLEAN OLD CLONE
         safe_delete_clone()
 
+        # 🔥 CLONE
         write_log("📥 Cloning (Webhook)...")
-        Repo.clone_from(repo_url, CLONE_DIR)
+        clone_dir = get_clone_dir()
+        Repo.clone_from(repo_url, clone_dir)
 
+        # 🔥 DETECT PROJECT
         project_type, port = detect_project_type()
 
         if project_type == "Unsupported":
             write_log("❌ Unsupported project")
             return "Unsupported", 200
 
+        # 🔥 DOCKERFILE
         generate_dockerfile(project_type)
 
+        # 🔥 BUILD
         write_log("🐳 Building (Webhook)...")
         success, error = docker_build()
 
@@ -888,10 +901,11 @@ def github_webhook():
             write_log("❌ Build failed (Webhook)")
             return "Build Failed", 500
 
+        # 🔥 DEPLOY
         write_log("🚀 Deploying (Webhook)...")
         status = deploy_main(port)
 
-        # 🔥 SAVE TO DASHBOARD
+        # 🔥 SAVE HISTORY (VISIBLE IN DASHBOARD)
         save_history({
             "user": repo_owner,
             "repo": repo_url,
@@ -900,8 +914,13 @@ def github_webhook():
             "time": 0
         })
 
-        write_log("✅ Webhook deployment done")
+        # 🔥 RESTORE SESSION SAFELY
+        if user_backup:
+            session["username"] = user_backup
+        else:
+            session.pop("username", None)
 
+        write_log("✅ Webhook deployment done")
         return "Success", 200
 
     except Exception as e:
