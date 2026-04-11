@@ -4,10 +4,11 @@ import stat
 import subprocess
 import json
 import time
+import requests
 import sqlite3
 import platform
 
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session ,Response
 from git import Repo
 
 app = Flask(__name__)
@@ -329,52 +330,19 @@ def backup_current_container():
             run_cmd(["docker", "commit", container_id, backup_image])
 
 
-def get_public_url(port):
+def get_base_url():
     try:
-        import requests
         tunnels = requests.get("http://127.0.0.1:4040/api/tunnels").json()
 
         for t in tunnels["tunnels"]:
-            if str(port) in t["config"]["addr"]:
+            if t["proto"] == "https":
                 return t["public_url"]
 
-    except Exception as e:
-        write_log(f"ngrok error: {str(e)}")
+        return tunnels["tunnels"][0]["public_url"]
 
-    return None
+    except:
+        return "http://127.0.0.1:5000"
 
-## ----ngrok -------
-def ensure_ngrok_tunnel(port):
-    try:
-        import requests
-
-        res = requests.get("http://127.0.0.1:4040/api/tunnels")
-
-        if res.status_code != 200:
-           return None
-
-        tunnels = res.json()
-
-        # check if tunnel already exists
-        for t in tunnels["tunnels"]:
-            if str(port) in t["config"]["addr"]:
-                return t["public_url"]
-
-        # 🔥 create new tunnel via ngrok API
-        res = requests.post(
-            "http://127.0.0.1:4040/api/tunnels",
-            json={"addr": port, "proto": "http"}
-        )
-
-        if res.status_code != 200:
-            return None
-
-        data = res.json()
-        return data.get("public_url")
-
-    except Exception as e:
-        write_log(f"ngrok tunnel error: {str(e)}")
-        return None
 
 # 🔥 UPDATED DEPLOY (MULTI PORT)
 def deploy_main(port):
@@ -386,7 +354,6 @@ def deploy_main(port):
 
     write_log(f"🚀 Deploying on port {new_port}")
 
-    # 🔥 FIX: remove existing container if same name exists
     run_cmd(["docker", "rm", "-f", container_name])
 
     result = run_cmd([
@@ -399,14 +366,12 @@ def deploy_main(port):
     write_log(result.stdout)
     write_log(result.stderr)
 
-    # 🔥 GET PUBLIC URL FROM NGROK
-    public_url = ensure_ngrok_tunnel(new_port)
-
     if port == "0":
-       return "RUNNING (C++ CLI app - no web interface)"
+        return "RUNNING (C++ CLI app - no web interface)"
 
-    url = public_url if public_url else f"http://127.0.0.1:{new_port}"
-    return f"LIVE → {url}"
+    base_url = get_base_url()
+    return f"LIVE → {base_url}/app/{new_port}"
+    
 
 
 def deploy_backup(port):
@@ -435,7 +400,8 @@ def deploy_backup(port):
     if port == "0":
        return "ROLLBACK → C++ CLI app (no web interface)"
     
-    return f"ROLLBACK → http://127.0.0.1:{new_port}"
+    base_url = get_base_url()
+    return f"ROLLBACK → {base_url}/app/{new_port}"
 
 
 # ---------------- RISK ENGINE ----------------
@@ -485,6 +451,69 @@ def write_log(message):
     with open("logs.txt", "a", encoding="utf-8") as f:
         f.write(message + "\n")
 
+
+@app.route("/app/<int:port>", defaults={"path": ""})
+@app.route("/app/<int:port>/<path:path>")
+def proxy(port, path):
+    try:
+        url = f"http://127.0.0.1:{port}/{path}"
+
+        resp = requests.request(
+            method=request.method,
+            url=url,
+            headers={key: value for key, value in request.headers if key.lower() != "host"},
+            data=request.get_data(),
+            cookies=request.cookies,
+            allow_redirects=False,
+            stream=True
+        )
+
+        excluded_headers = ["content-encoding", "content-length", "transfer-encoding", "connection"]
+
+        headers = []
+        for name, value in resp.raw.headers.items():
+            if name.lower() not in excluded_headers:
+
+                # 🔥 FIX REDIRECTS
+                if name.lower() == "location":
+                    value = value.replace(
+                        "http://127.0.0.1",
+                        f"{get_base_url()}/app/{port}"
+                    )
+
+                headers.append((name, value))
+
+        content_type = resp.headers.get("Content-Type", "")
+        
+        headers.append(("X-Forwarded-Proto", "https"))
+        headers.append(("X-Forwarded-Host", request.host))
+        if "text/html" in content_type:
+            content = resp.content.decode("utf-8", errors="ignore")
+
+            base_tag = f'<base href="/app/{port}/">'
+
+            # add base tag
+            if "<head>" in content:
+                content = content.replace("<head>", f"<head>{base_tag}")
+            else:
+                content = base_tag + content
+
+            # 🔥 IMPORTANT: fix absolute paths
+            content = content.replace('href="/', f'href="/app/{port}/')
+            content = content.replace('src="/', f'src="/app/{port}/')
+            content = content.replace('action="/', f'action="/app/{port}/')
+
+            return Response(content, resp.status_code, headers)
+
+        # 🔥 HANDLE OTHER FILES (CSS, JS, images)
+        return Response(
+            resp.iter_content(chunk_size=1024),
+            status=resp.status_code,
+            headers=headers
+        )
+
+    except Exception as e:
+        return f"Proxy Error: {str(e)}"
 
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
@@ -1097,4 +1126,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=5000,debug=True, use_reloader=False)
