@@ -4,6 +4,7 @@ import stat
 import subprocess
 import json
 import time
+import re
 import requests
 import sqlite3
 import platform
@@ -455,6 +456,7 @@ def write_log(message):
 @app.route("/app/<int:port>", defaults={"path": ""})
 @app.route("/app/<int:port>/<path:path>")
 def proxy(port, path):
+    import re
     try:
         url = f"http://127.0.0.1:{port}/{path}"
 
@@ -473,39 +475,81 @@ def proxy(port, path):
         headers = []
         for name, value in resp.raw.headers.items():
             if name.lower() not in excluded_headers:
-
-                # 🔥 FIX REDIRECTS
                 if name.lower() == "location":
                     value = value.replace(
                         "http://127.0.0.1",
                         f"{get_base_url()}/app/{port}"
                     )
-
                 headers.append((name, value))
 
         content_type = resp.headers.get("Content-Type", "")
-        
+
         headers.append(("X-Forwarded-Proto", "https"))
         headers.append(("X-Forwarded-Host", request.host))
+
         if "text/html" in content_type:
             content = resp.content.decode("utf-8", errors="ignore")
 
             base_tag = f'<base href="/app/{port}/">'
 
-            # add base tag
-            if "<head>" in content:
-                content = content.replace("<head>", f"<head>{base_tag}")
+            # Inject base tag
+            if "<head>" in content.lower():
+                content = re.sub(r'<head>', f'<head>{base_tag}', content, count=1, flags=re.IGNORECASE)
             else:
                 content = base_tag + content
 
-            # 🔥 IMPORTANT: fix absolute paths
+            # Fix absolute paths with double quotes
             content = content.replace('href="/', f'href="/app/{port}/')
             content = content.replace('src="/', f'src="/app/{port}/')
             content = content.replace('action="/', f'action="/app/{port}/')
 
+            # Fix absolute paths with single quotes
+            content = content.replace("href='/", f"href='/app/{port}/")
+            content = content.replace("src='/", f"src='/app/{port}/")
+            content = content.replace("action='/", f"action='/app/{port}/")
+
+            # Fix relative paths (e.g. src="style.css", href="css/main.css")
+            content = re.sub(
+                r'src="(?!http|//|/app|data:|#)([^"]+)"',
+                lambda m: f'src="/app/{port}/{m.group(1)}"',
+                content
+            )
+            content = re.sub(
+                r"src='(?!http|//|/app|data:|#)([^']+)'",
+                lambda m: f"src='/app/{port}/{m.group(1)}'",
+                content
+            )
+            content = re.sub(
+                r'href="(?!http|//|/app|#|mailto:|tel:|javascript:)([^"]+)"',
+                lambda m: f'href="/app/{port}/{m.group(1)}"',
+                content
+            )
+            content = re.sub(
+                r"href='(?!http|//|/app|#|mailto:|tel:|javascript:)([^']+)'",
+                lambda m: f"href='/app/{port}/{m.group(1)}'",
+                content
+            )
+
+            # Fix url() in inline styles
+            content = re.sub(
+                r'url\(["\']?(?!http|//|data:)([^)"\']+)["\']?\)',
+                lambda m: f'url("/app/{port}/{m.group(1)}")',
+                content
+            )
+
             return Response(content, resp.status_code, headers)
 
-        # 🔥 HANDLE OTHER FILES (CSS, JS, images)
+        # For CSS files — rewrite url() references inside CSS
+        elif "text/css" in content_type:
+            css_content = resp.content.decode("utf-8", errors="ignore")
+            css_content = re.sub(
+                r'url\(["\']?(?!http|//|data:)([^)"\']+)["\']?\)',
+                lambda m: f'url("/app/{port}/{m.group(1)}")',
+                css_content
+            )
+            return Response(css_content, resp.status_code, headers)
+
+        # All other files (JS, images, fonts, etc.)
         return Response(
             resp.iter_content(chunk_size=1024),
             status=resp.status_code,
@@ -1124,6 +1168,7 @@ def logout():
     session.clear()
     return redirect("/login")
 
+# -- Correct  wala h
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000,debug=True, use_reloader=False)
