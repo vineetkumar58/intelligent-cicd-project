@@ -1,75 +1,203 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>System Control</title>
-
+    <title>System Control — Intelligent CI/CD</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      body {
+      :root {
+        --bg: #050a12;
+        --surface: #0c1420;
+        --surface2: #0f1c2e;
+        --border: rgba(56, 189, 248, 0.1);
+        --border2: rgba(255, 255, 255, 0.05);
+        --accent: #38bdf8;
+        --accent2: #0ea5e9;
+        --green: #10b981;
+        --yellow: #f59e0b;
+        --red: #f43f5e;
+        --text: #e2e8f0;
+        --muted: #64748b;
+        --mono: "Space Mono", monospace;
+        --sans: "DM Sans", sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
         margin: 0;
-        font-family: "Segoe UI", sans-serif;
-        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-        color: white;
+        padding: 0;
       }
 
-      /* 🔥 NAVBAR */
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(56, 189, 248, 0.15);
+        border-radius: 3px;
+      }
+
       .nav {
+        height: 60px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        padding: 15px 40px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+        justify-content: space-between;
+        padding: 0 28px;
+        background: rgba(12, 20, 32, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
       }
 
-      .logo {
-        font-size: 18px;
-        font-weight: bold;
-        color: #38bdf8;
+      .nav-logo {
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
       }
 
       .nav-links {
         display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .nav-link {
+        padding: 7px 13px;
+        border-radius: 7px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+        transition: 0.2s;
+      }
+      .nav-link:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .nav-logout {
+        padding: 7px 13px;
+        border-radius: 7px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 13px;
+        transition: 0.2s;
+        border: 1px solid transparent;
+      }
+      .nav-logout:hover {
+        color: var(--red);
+        border-color: rgba(244, 63, 94, 0.2);
+        background: rgba(244, 63, 94, 0.05);
+      }
+
+      .page {
+        padding: 28px;
+        max-width: 1300px;
+        margin: 0 auto;
+      }
+
+      /* STATS BAR */
+      .stats-bar {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 28px;
+      }
+
+      .stat-pill {
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
         gap: 12px;
       }
 
-      .nav-btn {
-        padding: 8px 14px;
-        border-radius: 8px;
-        text-decoration: none;
-        color: white;
-        background: rgba(255, 255, 255, 0.08);
-        transition: 0.3s;
-        font-size: 14px;
+      .stat-pill-icon {
+        font-size: 20px;
       }
 
-      .nav-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: translateY(-2px);
+      .stat-pill-label {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--muted);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 3px;
       }
 
-      .logout {
-        background: #e74c3c;
+      .stat-pill-value {
+        font-family: var(--mono);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
       }
 
-      .logout:hover {
-        background: #c0392b;
+      .stat-pill-value.green {
+        color: var(--green);
+      }
+      .stat-pill-value.red {
+        color: var(--red);
       }
 
-      .container {
-        padding: 30px;
+      .section-title {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-title::before {
+        content: "";
+        width: 20px;
+        height: 1px;
+        background: var(--accent);
       }
 
-      h2 {
-        margin-bottom: 20px;
-      }
-
-      .table-box {
-        background: rgba(255, 255, 255, 0.05);
+      .table-card {
+        background: var(--surface);
+        border: 1px solid var(--border2);
         border-radius: 12px;
-        padding: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(10px);
+        overflow: hidden;
       }
 
       table {
@@ -77,154 +205,347 @@
         border-collapse: collapse;
       }
 
-      th, td {
-        padding: 14px;
+      thead th {
+        padding: 12px 16px;
+        text-align: left;
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--muted);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border2);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: 0.15s;
+      }
+      tbody tr:hover {
+        background: rgba(56, 189, 248, 0.02);
+      }
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+
+      tbody td {
+        padding: 13px 16px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      tbody td:first-child {
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .port-tag {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 3px 8px;
+        background: rgba(56, 189, 248, 0.08);
+        border: 1px solid rgba(56, 189, 248, 0.15);
+        border-radius: 5px;
+        color: var(--accent);
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 20px;
+      }
+
+      .status-badge.running {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: var(--green);
+      }
+
+      .status-badge.stopped {
+        background: rgba(100, 116, 139, 0.1);
+        border: 1px solid rgba(100, 116, 139, 0.15);
+        color: var(--muted);
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      .status-dot.running {
+        background: var(--green);
+        box-shadow: 0 0 5px var(--green);
+        animation: pulse 2s infinite;
+      }
+      .status-dot.stopped {
+        background: var(--muted);
+      }
+
+      .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 13px;
+        border-radius: 7px;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 500;
+        transition: 0.2s;
+        margin-right: 6px;
+      }
+
+      .btn-start {
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: var(--green);
+      }
+      .btn-start:hover {
+        background: rgba(16, 185, 129, 0.15);
+      }
+
+      .btn-stop {
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        color: var(--yellow);
+      }
+      .btn-stop:hover {
+        background: rgba(245, 158, 11, 0.15);
+      }
+
+      .btn-remove {
+        background: rgba(244, 63, 94, 0.08);
+        border: 1px solid rgba(244, 63, 94, 0.2);
+        color: var(--red);
+      }
+      .btn-remove:hover {
+        background: rgba(244, 63, 94, 0.15);
+      }
+
+      /* MODAL */
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(5, 10, 18, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal.open {
+        display: flex;
+      }
+
+      .modal-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+        width: 360px;
         text-align: center;
+        animation: mIn 0.2s ease;
       }
 
-      th {
-        color: #94a3b8;
-        font-size: 14px;
+      @keyframes mIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
 
-      tr {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      .modal-icon {
+        font-size: 32px;
+        margin-bottom: 14px;
+      }
+      .modal-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 8px;
+      }
+      .modal-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 24px;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .modal-yes {
+        flex: 1;
+        padding: 11px;
+        background: var(--accent);
+        border: none;
+        border-radius: 8px;
+        color: #050a12;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
         transition: 0.2s;
       }
+      .modal-yes:hover {
+        background: var(--accent2);
+      }
 
-      tr:hover {
+      .modal-no {
+        flex: 1;
+        padding: 11px;
         background: rgba(255, 255, 255, 0.05);
-      }
-
-      .btn {
-        padding: 6px 14px;
+        border: 1px solid var(--border2);
         border-radius: 8px;
-        text-decoration: none;
-        color: white;
+        color: var(--muted);
         font-size: 13px;
-        margin: 3px;
-        display: inline-block;
-        transition: 0.3s;
+        cursor: pointer;
+        transition: 0.2s;
       }
-
-      .start { background: #2ecc71; }
-      .start:hover { background: #27ae60; }
-
-      .stop { background: #f39c12; }
-      .stop:hover { background: #d68910; }
-
-      .delete { background: #e74c3c; }
-      .delete:hover { background: #c0392b; }
-
-      .status {
-        padding: 5px 10px;
-        border-radius: 6px;
-        font-size: 12px;
+      .modal-no:hover {
+        color: var(--text);
       }
-
-      .running { background: #2ecc71; }
-      .stopped { background: #7f8c8d; }
-
-      /* 🔥 MODAL */
-      .modal{
-        display:none;
-        position:fixed;
-        top:0;
-        left:0;
-        width:100%;
-        height:100%;
-        background:rgba(0,0,0,0.7);
-        justify-content:center;
-        align-items:center;
-      }
-
-      .modal-box{
-        background:#1e293b;
-        padding:25px;
-        border-radius:10px;
-        text-align:center;
-        width:300px;
-      }
-
-      .modal-actions button{
-        margin:10px;
-        padding:8px 15px;
-        border:none;
-        border-radius:6px;
-        cursor:pointer;
-      }
-
-      .yes-btn{ background:#22c55e; color:white; }
-      .no-btn{ background:#ef4444; color:white; }
-
     </style>
   </head>
-
   <body>
-    <!-- 🔥 NAVBAR -->
-    <div class="nav">
-      <div class="logo">⚙️ System Control</div>
-
-      <div class="nav-links">
-        <a href="/" class="nav-btn">🏠 Home</a>
-        <a href="/dashboard" class="nav-btn">📊 Dashboard</a>
-        <a href="/logout" class="nav-btn logout">🚪 Logout</a>
+    <nav class="nav">
+      <div class="nav-logo">
+        <span class="pulse-dot"></span>
+        System Control
       </div>
-    </div>
+      <div class="nav-links">
+        <a href="/" class="nav-link">🏠 Home</a>
+        <a href="/dashboard" class="nav-link">📊 Dashboard</a>
+        <a href="/logout" class="nav-logout">↩ Logout</a>
+      </div>
+    </nav>
 
-    <div class="container">
-      <h2>🐳 Containers (Running + Stopped)</h2>
+    <div class="page">
+      <!-- STATS BAR -->
+      {% set running_count = namespace(value=0) %} {% set stopped_count =
+      namespace(value=0) %} {% for c in containers %} {% if "Up" in c.status %}
+      {% set running_count.value = running_count.value + 1 %} {% else %} {% set
+      stopped_count.value = stopped_count.value + 1 %} {% endif %} {% endfor %}
 
-      <div class="table-box">
+      <div class="stats-bar">
+        <div class="stat-pill">
+          <span class="stat-pill-icon">🐳</span>
+          <div>
+            <div class="stat-pill-label">Total</div>
+            <div class="stat-pill-value">{{ containers | length }}</div>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-icon">🟢</span>
+          <div>
+            <div class="stat-pill-label">Running</div>
+            <div class="stat-pill-value green">{{ running_count.value }}</div>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-icon">⚫</span>
+          <div>
+            <div class="stat-pill-label">Stopped</div>
+            <div class="stat-pill-value red">{{ stopped_count.value }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Container Registry</div>
+
+      <div class="table-card">
         <table>
-          <tr>
-            <th>Name</th>
-            <th>Ports</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-
-          {% for c in containers %}
-          <tr>
-            <td>{{c.name}}</td>
-            <td>{{c.ports}}</td>
-
-            <td>
-              {% if "Up" in c.status %}
-              <span class="status running">🟢 Running</span>
-              {% else %}
-              <span class="status stopped">⚫ Stopped</span>
-              {% endif %}
-            </td>
-
-            <td>
-              {% if "Up" in c.status %}
-
-              <a href="/stop-container/{{c.name}}" onclick="openModal(this, 'Stop this container?')" class="btn stop">⏹ Stop</a>
-
-              {% else %}
-
-              <a href="/start-container/{{c.name}}" onclick="openModal(this, 'Start this container?')" class="btn start">▶ Start</a>
-
-              {% endif %}
-
-              <a href="/remove-container/{{c.name}}" onclick="openModal(this, 'Delete this container?')" class="btn delete">🗑 Delete</a>
-            </td>
-          </tr>
-          {% endfor %}
+          <thead>
+            <tr>
+              <th>Container Name</th>
+              <th>Port Mapping</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in containers %}
+            <tr>
+              <td>{{ c.name }}</td>
+              <td>
+                {% if c.ports %}
+                <span class="port-tag">{{ c.ports }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if "Up" in c.status %}
+                <span class="status-badge running">
+                  <span class="status-dot running"></span> Running
+                </span>
+                {% else %}
+                <span class="status-badge stopped">
+                  <span class="status-dot stopped"></span> Stopped
+                </span>
+                {% endif %}
+              </td>
+              <td>
+                {% if "Up" in c.status %}
+                <a
+                  href="/stop-container/{{ c.name }}"
+                  onclick="
+                    openModal(
+                      this,
+                      'Stop Container?',
+                      'The container will be stopped.',
+                    )
+                  "
+                  class="action-btn btn-stop"
+                  >⏹ Stop</a
+                >
+                {% else %}
+                <a
+                  href="/start-container/{{ c.name }}"
+                  onclick="
+                    openModal(
+                      this,
+                      'Start Container?',
+                      'The container will be restarted.',
+                    )
+                  "
+                  class="action-btn btn-start"
+                  >▶ Start</a
+                >
+                {% endif %}
+                <a
+                  href="/remove-container/{{ c.name }}"
+                  onclick="
+                    openModal(
+                      this,
+                      'Remove Container?',
+                      'This will permanently remove the container.',
+                    )
+                  "
+                  class="action-btn btn-remove"
+                  >🗑 Remove</a
+                >
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
         </table>
       </div>
     </div>
 
-    <!-- 🔥 MODAL -->
     <div id="confirmModal" class="modal">
       <div class="modal-box">
-        <h3>⚠ Confirm Action</h3>
-        <p id="modalText"></p>
-
+        <div class="modal-icon">⚙️</div>
+        <div class="modal-title" id="modalTitle">Confirm Action</div>
+        <div class="modal-sub" id="modalSub">Are you sure?</div>
         <div class="modal-actions">
-          <button class="yes-btn" onclick="proceed()">Yes</button>
-          <button class="no-btn" onclick="closeModal()">Cancel</button>
+          <button class="modal-yes" onclick="proceed()">Confirm</button>
+          <button class="modal-no" onclick="closeModal()">Cancel</button>
         </div>
       </div>
     </div>
@@ -232,21 +553,20 @@
     <script>
       let actionLink = null;
 
-      function openModal(el, text){
+      function openModal(el, title, sub) {
         event.preventDefault();
         actionLink = el.href;
-        document.getElementById("modalText").innerText = text;
-        document.getElementById("confirmModal").style.display = "flex";
+        document.getElementById("modalTitle").textContent = title;
+        document.getElementById("modalSub").textContent = sub;
+        document.getElementById("confirmModal").classList.add("open");
       }
 
-      function closeModal(){
-        document.getElementById("confirmModal").style.display = "none";
+      function closeModal() {
+        document.getElementById("confirmModal").classList.remove("open");
       }
-
-      function proceed(){
+      function proceed() {
         window.location.href = actionLink;
       }
     </script>
-
   </body>
 </html>

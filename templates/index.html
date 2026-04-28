@@ -1,239 +1,571 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Intelligent CI/CD</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Deploy — Intelligent CI/CD</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050a12;
+  --surface: #0c1420;
+  --surface2: #111b2e;
+  --border: rgba(56,189,248,0.12);
+  --border2: rgba(255,255,255,0.06);
+  --accent: #38bdf8;
+  --accent2: #0ea5e9;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #f43f5e;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
 
-    <style>
-      body {
-        margin: 0;
-        font-family: "Segoe UI", sans-serif;
-        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-        color: white;
-      }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      /* NAVBAR */
-      .topbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 40px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-      .logo {
-        font-weight: bold;
-        font-size: 18px;
-        color: #38bdf8;
-      }
+/* NAVBAR */
+.nav {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: rgba(12,20,32,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
 
-      .nav-links a {
-        color: white;
-        text-decoration: none;
-        margin-left: 20px;
-        padding: 6px 12px;
-        border-radius: 6px;
-        transition: 0.3s;
-      }
+.nav-logo {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-      .nav-links a:hover {
-        background: rgba(255, 255, 255, 0.1);
-      }
+.nav-logo::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
 
-      /* MAIN CONTAINER */
-      .container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 80vh;
-      }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
 
-      /* CARD */
-      .card {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 40px;
-        border-radius: 15px;
-        width: 500px;
-        text-align: center;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(12px);
-      }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-      /* TITLE */
-      .card h1 {
-        margin-bottom: 10px;
-        font-size: 28px;
-      }
+.nav-link {
+  padding: 7px 14px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
 
-      .subtitle {
-        font-size: 14px;
-        color: #94a3b8;
-        margin-bottom: 30px;
-      }
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
 
-      /* INPUT */
-      input {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 8px;
-        background: #1e293b;
-        color: white;
-        font-size: 14px;
-        outline: none;
-        transition: 0.3s;
-      }
+.nav-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
 
-      input:focus {
-        box-shadow: 0 0 0 2px #38bdf8;
-      }
+.badge-user { background: rgba(100,116,139,0.2); color: #94a3b8; }
+.badge-admin { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+.badge-superadmin { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
 
-      /* BUTTON */
-      button {
-        margin-top: 20px;
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 8px;
-        background: linear-gradient(90deg, #38bdf8, #0ea5e9);
-        color: black;
-        font-weight: bold;
-        font-size: 15px;
-        cursor: pointer;
-        transition: 0.3s;
-      }
+.nav-logout {
+  padding: 7px 14px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.nav-logout:hover { color: var(--red); border-color: rgba(244,63,94,0.2); background: rgba(244,63,94,0.05); }
 
-      button:hover {
-        transform: scale(1.03);
-        box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
-      }
+/* MAIN */
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
 
-      /* ROLE BADGE */
-      .role-badge {
-        margin-top: 15px;
-        font-size: 13px;
-        padding: 5px 10px;
-        border-radius: 6px;
-        display: inline-block;
-      }
+/* HERO */
+.hero {
+  text-align: center;
+  margin-bottom: 56px;
+  position: relative;
+}
 
-      .user {
-        background: #7f8c8d;
-      }
-      .admin {
-        background: #f39c12;
-      }
-      .superadmin {
-        background: #9b59b6;
-      }
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(56,189,248,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
 
-      /* 🔥 MODAL */
-      .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        justify-content: center;
-        align-items: center;
-      }
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(56,189,248,0.08);
+  border: 1px solid rgba(56,189,248,0.2);
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
 
-      .modal-box {
-        background: #1e293b;
-        padding: 25px;
-        border-radius: 10px;
-        text-align: center;
-        width: 300px;
-      }
+.hero-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s infinite;
+}
 
-      .modal-actions button {
-        margin: 10px;
-        padding: 8px 15px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-      }
+.hero-title {
+  font-family: var(--mono);
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fff;
+  margin-bottom: 16px;
+}
 
-      .yes-btn {
-        background: #22c55e;
-        color: white;
-      }
+.hero-title span { color: var(--accent); }
 
-      .no-btn {
-        background: #ef4444;
-        color: white;
-      }
-    </style>
-  </head>
+.hero-sub {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
 
-  <body>
-    <!-- NAVBAR -->
-    <div class="topbar">
-      <div class="logo">🚀 Intelligent CI/CD</div>
+/* DEPLOY CARD */
+.deploy-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+}
 
-      <div class="nav-links">
-        <a href="/dashboard">Dashboard</a>
+.deploy-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
 
-        {% if role == "admin" or role == "superadmin" %}
-        <a href="/system-control">System Control</a>
-        {% endif %} {% if role == "superadmin" %}
-        <a href="/admin-panel">Admin Panel</a>
-        {% endif %}
+.deploy-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
 
-        <a href="/logout">Logout</a>
+.deploy-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(56,189,248,0.1);
+  border: 1px solid rgba(56,189,248,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.deploy-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.deploy-card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.input-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.repo-input-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.repo-input-prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.repo-input {
+  width: 100%;
+  padding: 14px 14px 14px 46px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.repo-input:focus {
+  border-color: var(--accent);
+  background: rgba(56,189,248,0.03);
+  box-shadow: 0 0 0 3px rgba(56,189,248,0.08);
+}
+
+.repo-input::placeholder { color: var(--muted); }
+
+.btn-deploy {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 10px;
+  color: #050a12;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-deploy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transition: 0.2s;
+}
+
+.btn-deploy:hover::after { opacity: 1; }
+.btn-deploy:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(56,189,248,0.35); }
+.btn-deploy:active { transform: translateY(0); }
+
+.risk-legend {
+  display: flex;
+  gap: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border2);
+}
+
+.risk-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.risk-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.risk-dot.low { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.risk-dot.medium { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.risk-dot.high { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+/* PIPELINE STEPS */
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.pipe-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.pipe-card:hover {
+  border-color: var(--border);
+  background: var(--surface2);
+  transform: translateY(-2px);
+}
+
+.pipe-card::after {
+  content: attr(data-step);
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(255,255,255,0.1);
+  font-weight: 700;
+}
+
+.pipe-emoji { font-size: 24px; margin-bottom: 10px; }
+
+.pipe-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pipe-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* MODAL */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5,10,18,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.open { display: flex; }
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  width: 380px;
+  text-align: center;
+  animation: modalIn 0.25s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-icon { font-size: 36px; margin-bottom: 16px; }
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.modal-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-yes {
+  flex: 1;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 8px;
+  color: #050a12;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.modal-yes:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(56,189,248,0.3); }
+
+.modal-no {
+  flex: 1;
+  padding: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.modal-no:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">🚀 CI/CD Console</div>
+  <div class="nav-links">
+    <a href="/dashboard" class="nav-link">📊 Dashboard</a>
+    {% if role == "admin" or role == "superadmin" %}
+    <a href="/system-control" class="nav-link">⚙️ System</a>
+    {% endif %}
+    {% if role == "superadmin" %}
+    <a href="/admin-panel" class="nav-link">👑 Admin</a>
+    {% endif %}
+    {% if role %}
+    <span class="nav-badge badge-{{ role }}">{{ role }}</span>
+    {% endif %}
+    <a href="/logout" class="nav-logout">↩ Logout</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="hero">
+    <div class="hero-tag">
+      <span class="hero-tag-dot"></span>
+      System Online
+    </div>
+    <h1 class="hero-title">Deploy Any Repo<br><span>Risk-Aware.</span> Instant.</h1>
+    <p class="hero-sub">Paste a GitHub URL. The engine clones, analyzes risk, builds a Docker image, and deploys — automatically.</p>
+  </div>
+
+  <!-- DEPLOY CARD -->
+  <div class="deploy-card">
+    <div class="deploy-card-header">
+      <div class="deploy-card-icon">🔗</div>
+      <div>
+        <div class="deploy-card-title">Repository Deployment</div>
+        <div class="deploy-card-sub">Supports Python, Node.js, Java, Static HTML, C++</div>
       </div>
     </div>
 
-    <!-- MAIN -->
-    <div class="container">
-      <div class="card">
-        <h1>Deploy Repository</h1>
-        <div class="subtitle">Automated risk-aware CI/CD deployment system</div>
-
-        <!-- 🔥 UPDATED FORM -->
-        <form action="/analyze" method="POST" id="deployForm">
-          <input name="repo_url" placeholder="Enter GitHub Repo URL" required />
-
-          <button type="button" onclick="openModal()">
-            🚀 Analyze & Deploy
-          </button>
-        </form>
-
-        <!-- ROLE INDICATOR -->
-        {% if role %}
-        <div class="role-badge {{ role }}">Logged in as: {{ role }}</div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- 🔥 CUSTOM MODAL -->
-    <div id="confirmModal" class="modal">
-      <div class="modal-box">
-        <h3>🚀 Start Deployment?</h3>
-        <p>Start CI/CD deployment for this repository?</p>
-
-        <div class="modal-actions">
-          <button class="yes-btn" onclick="submitForm()">Yes</button>
-          <button class="no-btn" onclick="closeModal()">Cancel</button>
+    <form action="/analyze" method="POST" id="deployForm">
+      <div class="input-group">
+        <div class="repo-input-wrap">
+          <span class="repo-input-prefix">⬡</span>
+          <input
+            class="repo-input"
+            name="repo_url"
+            placeholder="https://github.com/username/repository.git"
+            required
+          />
         </div>
+        <button type="button" class="btn-deploy" onclick="openModal()">
+          🚀 Deploy
+        </button>
       </div>
+    </form>
+
+    <div class="risk-legend">
+      <div class="risk-item"><span class="risk-dot low"></span> LOW — Deploy directly</div>
+      <div class="risk-item"><span class="risk-dot medium"></span> MEDIUM — Deploy with backup</div>
+      <div class="risk-item"><span class="risk-dot high"></span> HIGH — Auto rollback</div>
     </div>
+  </div>
 
-    <script>
-      function openModal() {
-        document.getElementById("confirmModal").style.display = "flex";
-      }
+  <!-- PIPELINE STEPS -->
+  <div class="pipeline">
+    <div class="pipe-card" data-step="01">
+      <div class="pipe-emoji">📥</div>
+      <div class="pipe-title">Clone</div>
+      <div class="pipe-desc">Git repository cloned and analyzed for recent changes</div>
+    </div>
+    <div class="pipe-card" data-step="02">
+      <div class="pipe-emoji">🔍</div>
+      <div class="pipe-title">Risk Analysis</div>
+      <div class="pipe-desc">Files, diffs, and history scored for deployment risk</div>
+    </div>
+    <div class="pipe-card" data-step="03">
+      <div class="pipe-emoji">🐳</div>
+      <div class="pipe-title">Docker Build</div>
+      <div class="pipe-desc">Auto-generated Dockerfile built into a container image</div>
+    </div>
+    <div class="pipe-card" data-step="04">
+      <div class="pipe-emoji">🚀</div>
+      <div class="pipe-title">Deploy / Rollback</div>
+      <div class="pipe-desc">Live deployment or safe rollback based on risk level</div>
+    </div>
+  </div>
+</main>
 
-      function closeModal() {
-        document.getElementById("confirmModal").style.display = "none";
-      }
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-icon">🚀</div>
+    <div class="modal-title">Start Deployment?</div>
+    <div class="modal-sub">The pipeline will clone, analyze, build, and deploy the repository. This may take a minute.</div>
+    <div class="modal-actions">
+      <button class="modal-yes" onclick="submitForm()">Deploy Now</button>
+      <button class="modal-no" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
-      function submitForm() {
-        document.getElementById("deployForm").submit();
-      }
-    </script>
-  </body>
+<script>
+function openModal() {
+  document.getElementById("confirmModal").classList.add("open");
+}
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("open");
+}
+function submitForm() {
+  document.getElementById("deployForm").submit();
+}
+</script>
+</body>
 </html>

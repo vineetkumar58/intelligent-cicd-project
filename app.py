@@ -9,7 +9,7 @@ import requests
 import sqlite3
 import platform
 
-from flask import Flask, render_template, request, redirect, session ,Response
+from flask import Flask, render_template, request, redirect, session, Response
 from git import Repo
 
 app = Flask(__name__)
@@ -111,7 +111,7 @@ def safe_delete_clone():
         shutil.rmtree(clone_dir, onerror=remove_readonly)
 
 
-# ---------------- NEW: DYNAMIC PORT ----------------
+# ---------------- DYNAMIC PORT ----------------
 def get_next_port():
     base = 5001
 
@@ -195,16 +195,16 @@ def detect_project_type():
 
         if any(f.endswith(".html") for f in files):
             return "Static Website", "80"
-        
+
         if any(f.endswith(".jar") for f in files):
             return "Java", "8080"
-        
+
         if any(f.endswith(".java") for f in files):
             return "Java", "8080"
-        
+
         if any(f.endswith(".cpp") for f in files):
             return "C++", "0"
-        
+
     return "Unsupported", None
 
 
@@ -263,7 +263,7 @@ EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
 """
-    
+
     elif project_type == "Java":
         content = f"""FROM openjdk:17
 WORKDIR /app
@@ -276,8 +276,8 @@ EXPOSE 8080
 
 # try running jar OR main class
 CMD ["sh","-c","java Main || (ls *.jar 2>/dev/null | head -n 1 | xargs -r java -jar) || tail -f /dev/null"]
-"""  
-        
+"""
+
     elif project_type == "C++":
         content = f"""FROM gcc:latest
 WORKDIR /app
@@ -287,7 +287,7 @@ RUN g++ *.cpp -o app || true
 
 CMD ["sh","-c","./app || tail -f /dev/null"]
 """
-        
+
     else:
         return False
 
@@ -297,7 +297,7 @@ CMD ["sh","-c","./app || tail -f /dev/null"]
     return True
 
 
-# ---------------- DOCKER ----------------
+# ---------------- DOCKER BUILD ----------------
 def docker_build():
     image = get_image_name()
     clone_dir = get_clone_dir()
@@ -321,12 +321,11 @@ def backup_current_container():
 
     if running:
         container_id = running[-1]
-    
-        # check if container is running
+
         status = run_cmd(
             ["docker", "inspect", "-f", "{{.State.Running}}", container_id]
         ).stdout.strip()
-    
+
         if status == "true":
             run_cmd(["docker", "commit", container_id, backup_image])
 
@@ -345,9 +344,9 @@ def get_base_url():
         return "http://127.0.0.1:5000"
 
 
-# 🔥 UPDATED DEPLOY (MULTI PORT)
-def deploy_main(port):
-    new_port = get_next_port()
+# ---------------- DEPLOY MAIN (LOW RISK) ----------------
+def deploy_main(port, fixed_port=None):
+    new_port = fixed_port if fixed_port else get_next_port()
     internal_port = port if port != "0" else None
     image = get_image_name()
 
@@ -372,9 +371,50 @@ def deploy_main(port):
 
     base_url = get_base_url()
     return f"LIVE → {base_url}/app/{new_port}"
-    
 
 
+# ---------------- DEPLOY CANARY (MEDIUM RISK) ----------------
+def deploy_canary(port):
+    image = get_image_name()
+    internal_port = port if port != "0" else None
+    canary_port = get_next_port()
+    canary_container = f"{current_user()}_{MAIN_CONTAINER}_canary_{canary_port}"
+
+    write_log(f"🐤 Starting canary container on port {canary_port}...")
+
+    # remove any previous canary containers for this user
+    all_containers = run_cmd(
+        ["docker", "ps", "-a", "--format", "{{.Names}}"]
+    ).stdout.strip().split("\n")
+
+    for c in all_containers:
+        if c and f"{current_user()}_{MAIN_CONTAINER}_canary" in c:
+            write_log(f"🛑 Removing old canary: {c}")
+            run_cmd(["docker", "rm", "-f", c])
+
+    result = run_cmd([
+        "docker", "run", "-d",
+        "--name", canary_container,
+        *(["-p", f"{canary_port}:{internal_port}"] if internal_port else []),
+        image
+    ])
+
+    write_log(result.stdout)
+    write_log(result.stderr)
+
+    if result.returncode != 0:
+        write_log("❌ Canary deployment failed — keeping old version live")
+        return "CANARY FAILED — old version still live"
+
+    base_url = get_base_url()
+    canary_url = f"{base_url}/app/{canary_port}"
+    write_log(f"🐤 Canary live at: {canary_url}")
+    write_log("✅ Old version still running — test canary before promoting")
+
+    return f"CANARY → {canary_url}"
+
+
+# ---------------- DEPLOY BACKUP (HIGH RISK ROLLBACK) ----------------
 def deploy_backup(port):
     backup_image = get_backup_image()
 
@@ -399,8 +439,8 @@ def deploy_backup(port):
     write_log(result.stderr)
 
     if port == "0":
-       return "ROLLBACK → C++ CLI app (no web interface)"
-    
+        return "ROLLBACK → C++ CLI app (no web interface)"
+
     base_url = get_base_url()
     return f"ROLLBACK → {base_url}/app/{new_port}"
 
@@ -448,15 +488,16 @@ def calculate_risk(files, lines, repo_url):
 
     return score
 
+
 def write_log(message):
     with open("logs.txt", "a", encoding="utf-8") as f:
         f.write(message + "\n")
 
 
+# ---------------- PROXY ----------------
 @app.route("/app/<int:port>", defaults={"path": ""})
 @app.route("/app/<int:port>/<path:path>")
 def proxy(port, path):
-    import re
     try:
         url = f"http://127.0.0.1:{port}/{path}"
 
@@ -492,23 +533,22 @@ def proxy(port, path):
 
             base_tag = f'<base href="/app/{port}/">'
 
-            # Inject base tag
             if "<head>" in content.lower():
                 content = re.sub(r'<head>', f'<head>{base_tag}', content, count=1, flags=re.IGNORECASE)
             else:
                 content = base_tag + content
 
-            # Fix absolute paths with double quotes
+            # fix absolute paths double quotes
             content = content.replace('href="/', f'href="/app/{port}/')
             content = content.replace('src="/', f'src="/app/{port}/')
             content = content.replace('action="/', f'action="/app/{port}/')
 
-            # Fix absolute paths with single quotes
+            # fix absolute paths single quotes
             content = content.replace("href='/", f"href='/app/{port}/")
             content = content.replace("src='/", f"src='/app/{port}/")
             content = content.replace("action='/", f"action='/app/{port}/")
 
-            # Fix relative paths (e.g. src="style.css", href="css/main.css")
+            # fix relative paths double quotes
             content = re.sub(
                 r'src="(?!http|//|/app|data:|#)([^"]+)"',
                 lambda m: f'src="/app/{port}/{m.group(1)}"',
@@ -530,7 +570,7 @@ def proxy(port, path):
                 content
             )
 
-            # Fix url() in inline styles
+            # fix url() in inline styles
             content = re.sub(
                 r'url\(["\']?(?!http|//|data:)([^)"\']+)["\']?\)',
                 lambda m: f'url("/app/{port}/{m.group(1)}")',
@@ -539,7 +579,6 @@ def proxy(port, path):
 
             return Response(content, resp.status_code, headers)
 
-        # For CSS files — rewrite url() references inside CSS
         elif "text/css" in content_type:
             css_content = resp.content.decode("utf-8", errors="ignore")
             css_content = re.sub(
@@ -549,7 +588,6 @@ def proxy(port, path):
             )
             return Response(css_content, resp.status_code, headers)
 
-        # All other files (JS, images, fonts, etc.)
         return Response(
             resp.iter_content(chunk_size=1024),
             status=resp.status_code,
@@ -558,6 +596,7 @@ def proxy(port, path):
 
     except Exception as e:
         return f"Proxy Error: {str(e)}"
+
 
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
@@ -582,7 +621,6 @@ def login():
             session["role"] = user[2]
             return redirect("/")
 
-        # 🔥 FIX HERE
         return render_template("login.html", error="Invalid username or password")
 
     return render_template("login.html")
@@ -649,14 +687,12 @@ def admin_panel():
     if session.get("role") not in ["admin", "superadmin"]:
         return "Access Denied"
 
-    # USERS
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT id,username,role FROM users")
     users = cursor.fetchall()
     conn.close()
 
-    # 🔥 USE SAME LOGIC AS system-control
     result = run_cmd(["docker", "ps", "-a", "--format", "{{.Names}}|{{.Ports}}|{{.Status}}"])
 
     containers = []
@@ -664,8 +700,6 @@ def admin_panel():
     for line in result.stdout.strip().split("\n"):
         if line:
             parts = line.split("|")
-
-            # 🔥 safety fix (important)
             if len(parts) == 3:
                 name, ports, status = parts
             elif len(parts) == 2:
@@ -673,7 +707,6 @@ def admin_panel():
                 ports = ""
             else:
                 continue
-
             containers.append({
                 "name": name,
                 "ports": ports,
@@ -685,6 +718,7 @@ def admin_panel():
         users=users,
         containers=containers
     )
+
 
 @app.route("/promote/<int:user_id>")
 def promote_user(user_id):
@@ -748,25 +782,21 @@ def home():
 
 
 # ---------------- DASHBOARD ----------------
-# ---------------- DASHBOARD ----------------
 @app.route("/dashboard")
 def dashboard():
 
     if not login_required():
         return redirect("/login")
 
-    # 🔥 NEW: GET FILTER VALUES
     repo_filter = request.args.get("repo")
     user_filter = request.args.get("user")
     risk_filter = request.args.get("risk")
 
     history = load_history()
 
-    # ✅ USER ISOLATION
     if current_role() == "user":
         history = [h for h in history if h.get("user") == current_user()]
 
-    # 🔥 APPLY FILTERS
     if repo_filter:
         history = [h for h in history if repo_filter.lower() in h.get("repo", "").lower()]
 
@@ -778,47 +808,40 @@ def dashboard():
 
     total = len(history)
 
-    low = sum(1 for h in history if h.get("risk") == "LOW")
+    low    = sum(1 for h in history if h.get("risk") == "LOW")
     medium = sum(1 for h in history if h.get("risk") == "MEDIUM")
-    high = sum(1 for h in history if h.get("risk") == "HIGH")
+    high   = sum(1 for h in history if h.get("risk") == "HIGH")
 
-    success = sum(1 for h in history if "LIVE" in h.get("status", ""))
+    success  = sum(1 for h in history if "LIVE"     in h.get("status", ""))
     rollback = sum(1 for h in history if "ROLLBACK" in h.get("status", ""))
-    failed = sum(1 for h in history if "FAILED" in h.get("status", ""))
+    failed   = sum(1 for h in history if "FAILED"   in h.get("status", ""))
 
     times = [h.get("time", 0) for h in history if isinstance(h.get("time"), (int, float))]
-    avg_time = round(sum(times) / len(times), 2) if times else 0
-    failure_rate = round((failed / total) * 100, 2) if total else 0
+    avg_time     = round(sum(times) / len(times), 2) if times else 0
+    failure_rate = round((failed / total) * 100, 2)  if total else 0
 
     repo_stats = {}
 
     for h in history:
         repo = h.get("repo", "")
-
         if repo not in repo_stats:
             repo_stats[repo] = {"total": 0, "fail": 0}
-
         repo_stats[repo]["total"] += 1
-
         if "ROLLBACK" in h.get("status", "") or "FAILED" in h.get("status", ""):
             repo_stats[repo]["fail"] += 1
 
     repo_ranking = []
 
     for repo, data in repo_stats.items():
-
         if data["total"] == 0:
             continue
-
         rate = data["fail"] / data["total"]
-
         if rate > 0.4:
             level = "HIGH"
         elif rate > 0:
             level = "MEDIUM"
         else:
             level = "LOW"
-
         repo_ranking.append({
             "repo": repo,
             "total": data["total"],
@@ -826,18 +849,14 @@ def dashboard():
             "risk": level
         })
 
-    # 🔥 NEW: USER ANALYTICS (ADMIN ONLY)
-    user_stats = {}
+    user_stats   = {}
     full_history = load_history()
 
     for h in full_history:
         user = h.get("user", "unknown")
-
         if user not in user_stats:
             user_stats[user] = {"total": 0, "fail": 0}
-
         user_stats[user]["total"] += 1
-
         if "FAILED" in h.get("status", "") or "ROLLBACK" in h.get("status", ""):
             user_stats[user]["fail"] += 1
 
@@ -855,16 +874,13 @@ def dashboard():
         history=history,
         failure_rate=failure_rate,
         repo_ranking=repo_ranking,
-
-        # 🔥 NEW
         user_stats=user_stats,
         role=current_role(),
-
-        # 🔥 FILTER VALUES (IMPORTANT)
         repo_filter=repo_filter,
         user_filter=user_filter,
         risk_filter=risk_filter
     )
+
 
 # ---------------- ANALYZE ----------------
 @app.route("/analyze", methods=["POST"])
@@ -883,9 +899,8 @@ def run_analysis():
         return redirect("/login")
 
     start_time = time.time()
-    repo_url = request.form["repo_url"]
+    repo_url   = request.form["repo_url"]
 
-     # 🔥 NEW: CHECK DOCKER STATUS
     if not is_docker_running():
         return render_template(
             "result.html",
@@ -895,14 +910,12 @@ def run_analysis():
             error="Please start Docker Desktop"
         )
 
-    # 🔥 CLEAR OLD LOGS
     open("logs.txt", "w").close()
     write_log("🚀 Starting Deployment...")
 
     try:
         safe_delete_clone()
 
-        # 🔥 AFTER CLONE
         write_log("📥 Cloning repository...")
         clone_dir = get_clone_dir()
 
@@ -910,9 +923,8 @@ def run_analysis():
         repo = Repo(clone_dir)
 
         commits = list(repo.iter_commits())
-
         changed = []
-        lines = 0
+        lines   = 0
 
         if len(commits) >= 2:
             latest, prev = commits[0], commits[1]
@@ -929,17 +941,15 @@ def run_analysis():
                    (l.startswith("-") and not l.startswith("---")):
                     lines += 1
 
-        # 🔥 AFTER RISK
         write_log("🔍 Analyzing code changes...")
-        risk = calculate_risk(changed, lines, repo_url)
+        risk  = calculate_risk(changed, lines, repo_url)
         level = "LOW" if risk <= 40 else "MEDIUM" if risk <= 80 else "HIGH"
-        write_log(f"⚠️ Risk Level: {level}")
+        write_log(f"⚠️ Risk Level: {level} (score: {risk})")
 
         project_type, port = detect_project_type()
 
         if project_type == "Unsupported":
             total_time = round(time.time() - start_time, 2)
-
             save_history({
                 "user": current_user(),
                 "repo": repo_url,
@@ -947,7 +957,6 @@ def run_analysis():
                 "status": "UNSUPPORTED PROJECT",
                 "time": total_time
             })
-
             return render_template(
                 "result.html",
                 level="N/A",
@@ -958,25 +967,33 @@ def run_analysis():
 
         generate_dockerfile(project_type)
 
-        # 🔥 BEFORE DOCKER BUILD
         write_log("🐳 Building Docker image...")
         success, error = docker_build()
 
-        # 🔥 AFTER BUILD
         if not success:
             write_log("❌ Build Failed")
             status = "BUILD FAILED"
         else:
             write_log("✅ Build Successful")
 
-            # 🔥 BEFORE DEPLOYMENT
-            if level in ["LOW", "MEDIUM"]:
-                write_log("🚀 Deploying new container...")
+            if level == "LOW":
+                write_log("🟢 LOW risk — Normal deployment...")
                 backup_current_container()
                 status = deploy_main(port)
-            else:
-                write_log("↩️ Rolling back to safe version...")
+
+            elif level == "MEDIUM":
+                write_log("🟡 MEDIUM risk — Canary deployment...")
+                backup_current_container()
+                status = deploy_canary(port)
+
+            else:  # HIGH
+                write_log("🔴 HIGH risk — Rolling back to last stable version...")
                 status = deploy_backup(port)
+                if "BLOCKED" in status:
+                    write_log("⚠️ No backup found — this was the first deploy")
+                    status = "HIGH RISK — No backup available. Please review your changes."
+                else:
+                    write_log("↩️ Rolled back successfully")
 
         total_time = round(time.time() - start_time, 2)
 
@@ -988,7 +1005,6 @@ def run_analysis():
             "time": total_time
         })
 
-        # 🔥 BEFORE RETURN
         write_log("🎉 Deployment Finished")
 
         return render_template(
@@ -1007,7 +1023,8 @@ def run_analysis():
             time=0,
             error=str(e)
         )
-    
+
+
 # ---------------- LOGS ----------------
 @app.route("/logs")
 def logs():
@@ -1016,99 +1033,173 @@ def logs():
             return f.read()
     except:
         return "No logs yet"
-    
-#------------ WEBHOOK ------------
+
+
+# ---------------- WEBHOOK ----------------
 @app.route("/webhook", methods=["POST"])
 def github_webhook():
 
-    # 🔥 CHECK DOCKER (important for local execution)
     if not is_docker_running():
         write_log("❌ Docker not running (Webhook)")
         return "Docker not running", 500
 
     data = request.json
 
-    # 🔥 ONLY MAIN BRANCH
     if data.get("ref") != "refs/heads/main":
         return "Ignored (not main branch)", 200
 
-    repo_url = data["repository"]["clone_url"]
+    repo_url       = data["repository"]["clone_url"]
+    repo_url_clean = repo_url.replace(".git", "").lower().strip()
 
-    history = load_history()
+    write_log(f"🔔 Webhook received for: {repo_url}")
+
+    history    = load_history()
     repo_owner = None
+    old_port   = None
 
-    # 🔥 FIND OWNER (who deployed this repo before)
     for h in reversed(history):
-        if repo_url.replace(".git","") in h.get("repo",""):
-            repo_owner = h.get("user")
-            break
+        history_repo_clean = h.get("repo", "").replace(".git", "").lower().strip()
+        repo_match = (
+            repo_url_clean == history_repo_clean or
+            repo_url_clean in history_repo_clean or
+            history_repo_clean in repo_url_clean
+        )
+
+        if repo_match:
+            if not repo_owner:
+                repo_owner = h.get("user")
+
+            if old_port is None and \
+               ("LIVE" in h.get("status", "") or "ROLLBACK" in h.get("status", "")) and \
+               "/app/" in h.get("status", ""):
+                try:
+                    port_match = re.search(r'/app/(\d+)', h["status"])
+                    if port_match:
+                        old_port = int(port_match.group(1))
+                except:
+                    pass
+
+            if repo_owner and old_port:
+                break
 
     if not repo_owner:
-        write_log("❌ Webhook blocked (unknown repo)")
+        write_log(f"❌ Webhook blocked — repo not found in history")
+        write_log(f"❌ GitHub sent: {repo_url}")
+        write_log(f"❌ History repos: {[h.get('repo') for h in history]}")
         return "Repo not registered", 403
 
-    write_log("🔔 Webhook triggered")
-    write_log(f"📦 Repo: {repo_url}")
+    write_log(f"👤 Owner: {repo_owner}")
+    write_log(f"🔁 Reusing port: {old_port if old_port else 'new port'}")
 
     try:
-        # 🔥 SAFE SESSION HANDLING
-        user_backup = session.get("username", None)
-        session["username"] = repo_owner
+        clone_dir  = f"cloned_repo_{repo_owner}"
+        image_name = f"{repo_owner}_image"
 
-        # 🔥 CLEAN OLD CLONE
-        safe_delete_clone()
+        # clean old clone
+        if os.path.exists(clone_dir):
+            try:
+                shutil.rmtree(clone_dir, onerror=remove_readonly)
+            except:
+                time.sleep(2)
+                try:
+                    shutil.rmtree(clone_dir, onerror=remove_readonly)
+                except Exception as e:
+                    write_log(f"⚠️ Could not delete old clone: {str(e)}")
 
-        # 🔥 CLONE
         write_log("📥 Cloning (Webhook)...")
-        clone_dir = get_clone_dir()
         Repo.clone_from(repo_url, clone_dir)
 
-        # 🔥 DETECT PROJECT
-        project_type, port = detect_project_type()
+        # detect project type
+        project_type = "Unsupported"
+        port         = None
+
+        for root, dirs, files in os.walk(clone_dir):
+            if "requirements.txt" in files:
+                project_type, port = "Python", "5000"
+                break
+            if "package.json" in files:
+                project_type, port = "Node.js", "3000"
+                break
+            if any(f.endswith(".html") for f in files):
+                project_type, port = "Static Website", "80"
+                break
+            if any(f.endswith(".java") for f in files) or any(f.endswith(".jar") for f in files):
+                project_type, port = "Java", "8080"
+                break
 
         if project_type == "Unsupported":
-            write_log("❌ Unsupported project")
+            write_log("❌ Unsupported project type")
             return "Unsupported", 200
 
-        # 🔥 DOCKERFILE
-        generate_dockerfile(project_type)
+        # generate dockerfile if missing
+        dockerfile_path = os.path.join(clone_dir, "Dockerfile")
+        if not os.path.exists(dockerfile_path):
+            session["username"] = repo_owner
+            generate_dockerfile(project_type)
+            session.pop("username", None)
 
-        # 🔥 BUILD
-        write_log("🐳 Building (Webhook)...")
-        success, error = docker_build()
+        write_log("🐳 Building Docker image (Webhook)...")
+        run_cmd(["docker", "rmi", "-f", image_name])
+        build_result = run_cmd(["docker", "build", "-t", image_name, "."], cwd=clone_dir)
 
-        if not success:
+        if build_result.returncode != 0:
             write_log("❌ Build failed (Webhook)")
+            write_log(build_result.stderr)
             return "Build Failed", 500
 
-        # 🔥 DEPLOY
-        write_log("🚀 Deploying (Webhook)...")
-        status = deploy_main(port)
+        write_log("✅ Build successful")
 
-        # 🔥 SAVE HISTORY (VISIBLE IN DASHBOARD)
-        save_history({
+        # stop all old containers for this user
+        write_log(f"🛑 Stopping all containers for: {repo_owner}")
+        all_containers = run_cmd(
+            ["docker", "ps", "-a", "--format", "{{.Names}}"]
+        ).stdout.strip().split("\n")
+
+        for c in all_containers:
+            if c and c.startswith(f"{repo_owner}_"):
+                write_log(f"🛑 Removing: {c}")
+                run_cmd(["docker", "rm", "-f", c])
+
+        # deploy on same port as before
+        deploy_port    = old_port if old_port else get_next_port()
+        internal_port  = port if port != "0" else None
+        container_name = f"{repo_owner}_{MAIN_CONTAINER}_{deploy_port}"
+
+        write_log(f"🚀 Deploying on port {deploy_port}...")
+        deploy_result = run_cmd([
+            "docker", "run", "-d",
+            "--name", container_name,
+            *(["-p", f"{deploy_port}:{internal_port}"] if internal_port else []),
+            image_name
+        ])
+
+        write_log(deploy_result.stdout)
+        write_log(deploy_result.stderr)
+
+        base_url = get_base_url()
+        status   = f"LIVE → {base_url}/app/{deploy_port}"
+
+        # save to history so next webhook finds same port
+        all_history = load_history()
+        all_history.append({
             "user": repo_owner,
             "repo": repo_url,
             "risk": "AUTO",
             "status": status,
             "time": 0
         })
+        with open(HISTORY_FILE, "w") as f:
+            json.dump(all_history, f, indent=4)
 
-        # 🔥 RESTORE SESSION SAFELY
-        if user_backup:
-            session["username"] = user_backup
-        else:
-            session.pop("username", None)
-
-        write_log("✅ Webhook deployment done")
+        write_log(f"✅ Webhook deployment done → {status}")
         return "Success", 200
 
     except Exception as e:
         write_log(f"❌ Webhook error: {str(e)}")
         return "Error", 500
-    
 
-#--------------SYSTEM CONTROL---------
+
+# ---------------- SYSTEM CONTROL ----------------
 @app.route("/system-control")
 def system_control():
 
@@ -1121,7 +1212,14 @@ def system_control():
 
     for line in result.stdout.strip().split("\n"):
         if line:
-            name, ports, status = line.split("|")
+            parts = line.split("|")
+            if len(parts) == 3:
+                name, ports, status = parts
+            elif len(parts) == 2:
+                name, status = parts
+                ports = ""
+            else:
+                continue
             containers.append({
                 "name": name,
                 "ports": ports,
@@ -1130,35 +1228,28 @@ def system_control():
 
     return render_template("system_control.html", containers=containers)
 
+
 @app.route("/start-container/<name>")
 def start_container_route(name):
-
     if current_role() not in ["admin", "superadmin"]:
         return "Access Denied"
-
     run_cmd(["docker", "start", name])
-
     return redirect(request.referrer or "/system-control")
+
 
 @app.route("/stop-container/<name>")
 def stop_container_route(name):
-
     if current_role() not in ["admin", "superadmin"]:
         return "Access Denied"
-
     run_cmd(["docker", "stop", name])
-
     return redirect(request.referrer or "/system-control")
 
 
 @app.route("/remove-container/<name>")
 def remove_container_route(name):
-
     if current_role() not in ["admin", "superadmin"]:
         return "Access Denied"
-
     run_cmd(["docker", "rm", "-f", name])
-
     return redirect(request.referrer or "/system-control")
 
 
@@ -1168,7 +1259,6 @@ def logout():
     session.clear()
     return redirect("/login")
 
-# -- Correct  wala h
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000,debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

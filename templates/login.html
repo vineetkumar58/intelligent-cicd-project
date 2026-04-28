@@ -1,208 +1,496 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-<title>Login - Intelligent CI/CD</title>
-
+<title>Login — Intelligent CI/CD</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-
-/* 🔥 BACKGROUND */
-body{
-margin:0;
-font-family:"Segoe UI",sans-serif;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:radial-gradient(circle at top,#1e293b,#020617);
-color:white;
-overflow:hidden;
+:root {
+  --bg: #050a12;
+  --surface: #0c1420;
+  --border: rgba(56,189,248,0.12);
+  --accent: #38bdf8;
+  --accent2: #0ea5e9;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --danger: #f43f5e;
+  --success: #10b981;
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
 }
 
-/* 🔥 GLOW EFFECT */
-body::before{
-content:"";
-position:absolute;
-width:350px;
-height:350px;
-background:#38bdf8;
-filter:blur(120px);
-opacity:0.2;
-top:-80px;
-left:-80px;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
 }
 
-body::after{
-content:"";
-position:absolute;
-width:350px;
-height:350px;
-background:#0ea5e9;
-filter:blur(120px);
-opacity:0.15;
-bottom:-80px;
-right:-80px;
+/* LEFT PANEL */
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+  position: relative;
+  overflow: hidden;
 }
 
-/* 🔥 CARD */
-.login-box{
-position:relative;
-background:rgba(30,41,59,0.65);
-backdrop-filter:blur(16px);
-padding:40px;
-border-radius:18px;
-width:370px;
-box-shadow:0 25px 70px rgba(0,0,0,0.7);
-text-align:center;
-animation:fadeIn 0.7s ease;
+.left-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(56,189,248,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(14,165,233,0.06) 0%, transparent 60%);
 }
 
-/* 🔥 ANIMATION */
-@keyframes fadeIn{
-from{opacity:0; transform:translateY(25px);}
-to{opacity:1; transform:translateY(0);}
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* 🔥 LOGO */
-.logo{
-font-size:22px;
-font-weight:600;
-color:#38bdf8;
-margin-bottom:5px;
-letter-spacing:0.5px;
+.brand {
+  position: relative;
+  z-index: 1;
 }
 
-/* 🔥 SUBTITLE */
-.subtitle{
-font-size:13px;
-color:#94a3b8;
-margin-bottom:25px;
+.brand-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* 🔥 TITLE */
-h2{
-margin-bottom:20px;
-font-weight:500;
+.brand-tag::before {
+  content: '';
+  width: 30px;
+  height: 1px;
+  background: var(--accent);
 }
 
-/* 🔥 INPUT */
-.input-group{
-position:relative;
-margin:15px 0;
+.brand-title {
+  font-family: var(--mono);
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 24px;
 }
 
-input{
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-background:#334155;
-color:white;
-font-size:14px;
-outline:none;
-transition:0.3s;
+.brand-title span {
+  color: var(--accent);
 }
 
-input:focus{
-background:#3b4b63;
-box-shadow:0 0 12px rgba(56,189,248,0.6);
+.brand-desc {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 400px;
+  margin-bottom: 48px;
 }
 
-/* 🔥 BUTTON */
-button{
-width:100%;
-padding:12px;
-background:linear-gradient(135deg,#38bdf8,#0ea5e9);
-border:none;
-border-radius:10px;
-font-size:15px;
-color:white;
-font-weight:600;
-cursor:pointer;
-margin-top:10px;
-transition:0.3s;
+.stats-row {
+  display: flex;
+  gap: 36px;
 }
 
-button:hover{
-transform:translateY(-2px);
-box-shadow:0 12px 30px rgba(56,189,248,0.4);
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* 🔥 ERROR */
-.error{
-margin-top:12px;
-padding:10px;
-background:rgba(231,76,60,0.15);
-border-radius:8px;
-color:#ff6b6b;
-font-size:13px;
+.stat-num {
+  font-family: var(--mono);
+  font-size: 22px;
+  color: var(--accent);
+  font-weight: 700;
 }
 
-/* 🔥 REGISTER */
-.register{
-margin-top:18px;
-font-size:14px;
-color:#94a3b8;
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.register a{
-color:#38bdf8;
-text-decoration:none;
-font-weight:500;
+/* PIPELINE VISUALIZATION */
+.pipeline-viz {
+  position: relative;
+  z-index: 1;
+  margin-top: 60px;
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
-.register a:hover{
-text-decoration:underline;
+.pipe-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-/* 🔥 SMALL DETAIL LINE */
-.divider{
-margin:15px 0;
-height:1px;
-background:rgba(255,255,255,0.08);
+.pipe-node {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(56,189,248,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  position: relative;
+  transition: 0.3s;
 }
 
+.pipe-node.active {
+  border-color: var(--accent);
+  background: rgba(56,189,248,0.15);
+  box-shadow: 0 0 20px rgba(56,189,248,0.2);
+}
+
+.pipe-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pipe-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0.3;
+  max-width: 40px;
+  position: relative;
+  top: -12px;
+}
+
+/* RIGHT PANEL - LOGIN FORM */
+.right-panel {
+  width: 480px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 48px;
+  position: relative;
+}
+
+.right-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%);
+}
+
+.form-header {
+  margin-bottom: 40px;
+}
+
+.form-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.form-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.form-sub {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+.field label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 13px 14px 13px 40px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-color: var(--accent);
+  background: rgba(56,189,248,0.04);
+  box-shadow: 0 0 0 3px rgba(56,189,248,0.08);
+}
+
+input::placeholder { color: var(--muted); }
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 8px;
+  color: #050a12;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  opacity: 0;
+  transition: 0.2s;
+}
+
+.btn-primary:hover::after { opacity: 1; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(56,189,248,0.3); }
+.btn-primary:active { transform: translateY(0); }
+
+.error-msg {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(244,63,94,0.08);
+  border: 1px solid rgba(244,63,94,0.2);
+  border-radius: 8px;
+  color: var(--danger);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.divider {
+  margin: 28px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.register-link {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.register-link a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.register-link a:hover { color: #fff; }
+
+/* TERMINAL TICKER */
+.ticker {
+  position: absolute;
+  bottom: 32px;
+  left: 48px;
+  right: 48px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ticker-inner {
+  display: inline-block;
+  animation: ticker 20s linear infinite;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ANIMATIONS */
+.right-panel > * {
+  animation: slideUp 0.5s ease forwards;
+  opacity: 0;
+}
+
+.right-panel .form-header { animation-delay: 0.1s; }
+.right-panel .field:nth-child(1) { animation-delay: 0.2s; }
+.right-panel .field:nth-child(2) { animation-delay: 0.25s; }
+.right-panel .btn-primary { animation-delay: 0.3s; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .left-panel { display: none; }
+  .right-panel { width: 100%; border-left: none; }
+}
 </style>
-
 </head>
-
 <body>
 
-<div class="login-box">
+<div class="left-panel">
+  <div class="grid-overlay"></div>
+  <div class="brand">
+    <div class="brand-tag">DevOps Platform</div>
+    <h1 class="brand-title">Intelligent<br><span>CI/CD</span><br>Pipeline</h1>
+    <p class="brand-desc">Risk-aware deployments powered by automated analysis. Clone, build, analyze, and deploy with confidence.</p>
+    <div class="stats-row">
+      <div class="stat">
+        <span class="stat-num">∞</span>
+        <span class="stat-label">Deployments</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">3x</span>
+        <span class="stat-label">Risk Levels</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">AUTO</span>
+        <span class="stat-label">Rollback</span>
+      </div>
+    </div>
 
-<div class="logo">🚀 Intelligent CI/CD</div>
-<div class="subtitle">Secure DevOps Deployment Platform</div>
-
-<h2>Welcome Back 👋</h2>
-
-<form method="POST">
-
-<div class="input-group">
-<input type="text" name="username" placeholder="👤 Username" required>
+    <div class="pipeline-viz" style="margin-top:48px;">
+      <div class="pipe-step">
+        <div class="pipe-node active">📥</div>
+        <span class="pipe-label">Clone</span>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-node active">🔍</div>
+        <span class="pipe-label">Analyze</span>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-node active">🐳</div>
+        <span class="pipe-label">Build</span>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-node active">🚀</div>
+        <span class="pipe-label">Deploy</span>
+      </div>
+      <div class="pipe-line"></div>
+      <div class="pipe-step">
+        <div class="pipe-node">📊</div>
+        <span class="pipe-label">Monitor</span>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="input-group">
-<input type="password" name="password" placeholder="🔒 Password" required>
-</div>
+<div class="right-panel">
+  <div class="form-header">
+    <div class="form-eyebrow">Secure Access</div>
+    <h2 class="form-title">Welcome back</h2>
+    <p class="form-sub">Sign in to your deployment console</p>
+  </div>
 
-<button type="submit">Login</button>
+  <form method="POST">
+    <div class="field">
+      <label>Username</label>
+      <div class="input-wrap">
+        <span class="input-icon">👤</span>
+        <input type="text" name="username" placeholder="Enter username" required autocomplete="username">
+      </div>
+    </div>
 
-</form>
+    <div class="field">
+      <label>Password</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+      </div>
+    </div>
 
-<!-- 🔥 ERROR -->
-{% if error %}
-<div class="error">
-⚠ {{ error }}
-</div>
-{% endif %}
+    <button type="submit" class="btn-primary">Sign In →</button>
+  </form>
 
-<div class="divider"></div>
+  {% if error %}
+  <div class="error-msg">⚠ {{ error }}</div>
+  {% endif %}
 
-<div class="register">
-Don't have an account?  
-<a href="/register">Create Account</a>
-</div>
+  <div class="divider">or</div>
 
+  <div class="register-link">
+    New to the platform? <a href="/register">Create account</a>
+  </div>
+
+  <div class="ticker">
+    <span class="ticker-inner">▶ INTELLIGENT CI/CD &nbsp;&nbsp;&nbsp; AUTO-ROLLBACK ENABLED &nbsp;&nbsp;&nbsp; MULTI-USER SUPPORT &nbsp;&nbsp;&nbsp; DOCKER-NATIVE &nbsp;&nbsp;&nbsp; RISK ENGINE ACTIVE &nbsp;&nbsp;&nbsp; WEBHOOK INTEGRATION &nbsp;&nbsp;&nbsp;</span>
+  </div>
 </div>
 
 </body>

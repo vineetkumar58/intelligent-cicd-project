@@ -1,258 +1,347 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Admin Panel</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Admin Panel — Intelligent CI/CD</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050a12;
+  --surface: #0c1420;
+  --surface2: #0f1c2e;
+  --border: rgba(56,189,248,0.1);
+  --border2: rgba(255,255,255,0.05);
+  --accent: #38bdf8;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #f43f5e;
+  --purple: #a78bfa;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
 
-    <style>
-      body {
-        font-family: Arial;
-        background: linear-gradient(135deg, #0f1b2d, #1c2e4a);
-        color: white;
-        margin: 0;
-      }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      .container {
-        width: 85%;
-        margin: auto;
-        margin-top: 40px;
-      }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
 
-      h1 {
-        text-align: center;
-        margin-bottom: 25px;
-      }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.15); border-radius: 3px; }
 
-      h2 {
-        margin-top: 40px;
-        text-align: center;
-      }
+.nav {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: rgba(12,20,32,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
 
-      .topbar {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-      }
+.nav-logo { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--purple); }
 
-      .btn {
-        padding: 8px 16px;
-        border-radius: 8px;
-        text-decoration: none;
-        color: white;
-        font-size: 14px;
-        transition: 0.3s;
-      }
+.nav-links { display: flex; align-items: center; gap: 4px; }
 
-      .create { background: #27ae60; }
-      .create:hover { background: #1e8449; }
+.nav-link {
+  padding: 7px 13px; border-radius: 7px; text-decoration: none;
+  color: var(--muted); font-size: 13px; font-weight: 500; transition: 0.2s;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
 
-      .logout { background: #e74c3c; }
-      .logout:hover { background: #c0392b; }
+.btn-create {
+  padding: 7px 14px; border-radius: 7px; text-decoration: none;
+  background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);
+  color: var(--green); font-size: 13px; font-weight: 500; transition: 0.2s;
+}
+.btn-create:hover { background: rgba(16,185,129,0.15); }
 
-      .home { background: #3498db; }
-      .home:hover { background: #2980b9; }
+.nav-logout {
+  padding: 7px 13px; border-radius: 7px; text-decoration: none;
+  color: var(--muted); font-size: 13px; transition: 0.2s; border: 1px solid transparent;
+}
+.nav-logout:hover { color: var(--red); border-color: rgba(244,63,94,0.2); background: rgba(244,63,94,0.05); }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(8px);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-      }
+.page { padding: 28px; max-width: 1300px; margin: 0 auto; }
 
-      th, td {
-        padding: 14px;
-        text-align: center;
-      }
+.section-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title::before { content: ''; width: 20px; height: 1px; background: var(--purple); }
 
-      th { background: #16233a; }
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
 
-      tr:nth-child(even) { background: #24344f; }
-      tr:hover { background: #2f466a; }
+table { width: 100%; border-collapse: collapse; }
 
-      .action-btn {
-        padding: 6px 12px;
-        border-radius: 6px;
-        text-decoration: none;
-        color: white;
-        font-size: 13px;
-        margin-right: 6px;
-        transition: 0.3s;
-      }
+thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border2);
+  background: rgba(255,255,255,0.02);
+}
 
-      .promote { background: #3498db; }
-      .promote:hover { background: #2980b9; }
+tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: 0.15s; }
+tbody tr:hover { background: rgba(167,139,250,0.03); }
+tbody tr:last-child { border-bottom: none; }
 
-      .delete { background: #e74c3c; }
-      .delete:hover { background: #c0392b; }
+tbody td { padding: 12px 16px; font-size: 13px; color: var(--muted); }
+tbody td:first-child { color: var(--text); font-family: var(--mono); font-size: 11px; }
 
-      .role {
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 12px;
-      }
+.role-badge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.role-badge.user { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.2); }
+.role-badge.admin { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+.role-badge.superadmin { background: rgba(167,139,250,0.12); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
 
-      .user { background: #7f8c8d; }
-      .admin { background: #f39c12; }
-      .superadmin { background: #9b59b6; }
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  transition: 0.2s;
+  margin-right: 6px;
+}
 
-      .status-running { color: #2ecc71; font-weight: bold; }
-      .status-stopped { color: #e74c3c; font-weight: bold; }
+.btn-promote { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.15); color: var(--accent); }
+.btn-promote:hover { background: rgba(56,189,248,0.15); }
 
-      .empty { padding: 20px; color: #aaa; }
+.btn-delete { background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.15); color: var(--red); }
+.btn-delete:hover { background: rgba(244,63,94,0.15); }
 
-      /* 🔥 MODAL */
-      .modal{
-        display:none;
-        position:fixed;
-        top:0; left:0;
-        width:100%; height:100%;
-        background:rgba(0,0,0,0.7);
-        justify-content:center;
-        align-items:center;
-      }
+.container-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: var(--mono);
+}
 
-      .modal-box{
-        background:#1e2b3f;
-        padding:25px;
-        border-radius:10px;
-        text-align:center;
-        width:300px;
-      }
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.stopped { background: var(--muted); }
 
-      .modal-actions button{
-        margin:10px;
-        padding:8px 15px;
-        border:none;
-        border-radius:6px;
-        cursor:pointer;
-      }
+.btn-start { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15); color: var(--green); }
+.btn-start:hover { background: rgba(16,185,129,0.15); }
 
-      .yes-btn{ background:#27ae60; color:white; }
-      .no-btn{ background:#e74c3c; color:white; }
+.btn-stop { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.15); color: var(--yellow); }
+.btn-stop:hover { background: rgba(245,158,11,0.15); }
 
-    </style>
-  </head>
+/* MODAL */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5,10,18,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+.modal.open { display: flex; }
 
-  <body>
-    <div class="container">
-      <div class="topbar">
-        <div>
-          <a href="/" class="btn home">🏠 Home</a>
-          <a href="/create-admin" class="btn create">➕ Create Admin</a>
-        </div>
-        <a href="/logout" class="btn logout">🚪 Logout</a>
-      </div>
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  width: 360px;
+  text-align: center;
+  animation: modalIn 0.2s ease;
+}
 
-      <h1>👑 Admin Management Panel</h1>
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
 
-      <!-- USERS -->
-      <table>
+.modal-icon { font-size: 32px; margin-bottom: 14px; }
+.modal-title { font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+.modal-actions { display: flex; gap: 10px; }
+
+.modal-yes {
+  flex: 1; padding: 11px;
+  background: var(--red); border: none;
+  border-radius: 8px; color: #fff;
+  font-weight: 700; font-size: 13px;
+  cursor: pointer; transition: 0.2s;
+}
+.modal-yes:hover { background: #e11d48; }
+
+.modal-no {
+  flex: 1; padding: 11px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--muted);
+  font-size: 13px; cursor: pointer; transition: 0.2s;
+}
+.modal-no:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">👑 Admin Panel</div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">🏠 Home</a>
+    <a href="/create-admin" class="btn-create">➕ Create Admin</a>
+    <a href="/logout" class="nav-logout">↩ Logout</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- USERS -->
+  <div class="section-title">User Management</div>
+  <div class="table-card">
+    <table>
+      <thead>
         <tr>
           <th>ID</th>
           <th>Username</th>
           <th>Role</th>
           <th>Actions</th>
         </tr>
-
+      </thead>
+      <tbody>
         {% for user in users %}
         <tr>
-          <td>{{ user[0] }}</td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">{{ user[0] }}</td>
           <td>{{ user[1] }}</td>
-
-          <td>
-            <span class="role {{ user[2] }}"> {{ user[2] }} </span>
-          </td>
-
+          <td><span class="role-badge {{ user[2] }}">{{ user[2] }}</span></td>
           <td>
             {% if user[2] == "user" %}
-            <a href="/promote/{{ user[0] }}" onclick="openModal(this, 'Promote this user to ADMIN?')" class="action-btn promote">⬆ Promote</a>
+            <a href="/promote/{{ user[0] }}" onclick="openModal(this, 'Promote to Admin?', 'This user will gain admin privileges.')" class="action-btn btn-promote">⬆ Promote</a>
             {% endif %}
-
             {% if user[1] != "vineet" %}
-            <a href="/delete-user/{{ user[0] }}" onclick="openModal(this, 'Delete this user permanently?')" class="action-btn delete">🗑 Delete</a>
+            <a href="/delete-user/{{ user[0] }}" onclick="openModal(this, 'Delete User?', 'This action cannot be undone.')" class="action-btn btn-delete">🗑 Delete</a>
             {% endif %}
           </td>
         </tr>
         {% endfor %}
-      </table>
+      </tbody>
+    </table>
+  </div>
 
-      <!-- CONTAINERS -->
-      <h2>🐳 Containers (Running + Exited)</h2>
-
-      <table>
+  <!-- CONTAINERS -->
+  <div class="section-title">Container Management</div>
+  <div class="table-card">
+    <table>
+      <thead>
         <tr>
-          <th>Name</th>
+          <th>Container</th>
           <th>Ports</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
-
+      </thead>
+      <tbody>
         {% if containers %}
         {% for c in containers %}
         <tr>
           <td>{{ c.name }}</td>
-          <td>{{ c.ports if c.ports else "-" }}</td>
-
+          <td style="font-family:var(--mono);font-size:11px;">{{ c.ports if c.ports else "—" }}</td>
           <td>
             {% if "Up" in c.status %}
-            <span class="status-running">🟢 {{ c.status }}</span>
+            <span class="container-status">
+              <span class="status-dot running"></span> Running
+            </span>
             {% else %}
-            <span class="status-stopped">🔴 {{ c.status }}</span>
+            <span class="container-status">
+              <span class="status-dot stopped"></span> Stopped
+            </span>
             {% endif %}
           </td>
-
           <td>
             {% if "Up" in c.status %}
-            <a href="/stop-container/{{ c.name }}" onclick="openModal(this, 'Stop this container?')" class="action-btn promote">⏹ Stop</a>
+            <a href="/stop-container/{{ c.name }}" onclick="openModal(this, 'Stop Container?', 'The container will be stopped.')" class="action-btn btn-stop">⏹ Stop</a>
             {% else %}
-            <a href="/start-container/{{ c.name }}" onclick="openModal(this, 'Start this container?')" class="action-btn create">▶ Start</a>
+            <a href="/start-container/{{ c.name }}" onclick="openModal(this, 'Start Container?', 'The container will be started.')" class="action-btn btn-start">▶ Start</a>
             {% endif %}
-
-            <a href="/remove-container/{{ c.name }}" onclick="openModal(this, 'Remove this container?')" class="action-btn delete">🗑 Remove</a>
+            <a href="/remove-container/{{ c.name }}" onclick="openModal(this, 'Remove Container?', 'This will permanently remove the container.')" class="action-btn btn-delete">🗑 Remove</a>
           </td>
         </tr>
         {% endfor %}
         {% else %}
         <tr>
-          <td colspan="4" class="empty">No containers found 🚫</td>
+          <td colspan="4" style="text-align:center; padding:32px; color:var(--muted); font-family:var(--mono); font-size:12px;">
+            No containers found
+          </td>
         </tr>
         {% endif %}
-      </table>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="confirmModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title" id="modalTitle">Confirm Action</div>
+    <div class="modal-sub" id="modalSub">Are you sure?</div>
+    <div class="modal-actions">
+      <button class="modal-yes" onclick="proceedAction()">Confirm</button>
+      <button class="modal-no" onclick="closeModal()">Cancel</button>
     </div>
+  </div>
+</div>
 
-    <!-- 🔥 MODAL -->
-    <div id="confirmModal" class="modal">
-      <div class="modal-box">
-        <h3>⚠ Confirm</h3>
-        <p id="modalText"></p>
+<script>
+let actionLink = null;
 
-        <div class="modal-actions">
-          <button class="yes-btn" onclick="proceedAction()">Yes</button>
-          <button class="no-btn" onclick="closeModal()">Cancel</button>
-        </div>
-      </div>
-    </div>
+function openModal(el, title, sub) {
+  event.preventDefault();
+  actionLink = el.href;
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalSub").textContent = sub;
+  document.getElementById("confirmModal").classList.add("open");
+}
 
-    <script>
-      let actionLink = null;
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("open");
+}
 
-      function openModal(el, text){
-        event.preventDefault();
-        actionLink = el.href;
-        document.getElementById("modalText").innerText = text;
-        document.getElementById("confirmModal").style.display = "flex";
-      }
-
-      function closeModal(){
-        document.getElementById("confirmModal").style.display = "none";
-      }
-
-      function proceedAction(){
-        window.location.href = actionLink;
-      }
-    </script>
-
-  </body>
+function proceedAction() {
+  window.location.href = actionLink;
+}
+</script>
+</body>
 </html>

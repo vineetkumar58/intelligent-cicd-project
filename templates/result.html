@@ -1,149 +1,521 @@
-<!DOCTYPE html> 
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Deployment Result</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+<title>Deployment Result — Intelligent CI/CD</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050a12;
+  --surface: #0c1420;
+  --surface2: #111b2e;
+  --border: rgba(56,189,248,0.12);
+  --border2: rgba(255,255,255,0.06);
+  --accent: #38bdf8;
+  --accent2: #0ea5e9;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #f43f5e;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
 
-        .card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            padding: 35px;
-            border-radius: 12px;
-            width: 460px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-        }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        h2 {
-            margin-bottom: 20px;
-        }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-x: hidden;
+}
 
-        .status {
-            font-size: 18px;
-            margin: 10px 0;
-        }
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
 
-        .low { color: #2ecc71; }
-        .medium { color: #f1c40f; }
-        .high { color: #e74c3c; }
-        .success { color: #2ecc71; }
-        .fail { color: #e74c3c; }
+.glow-1 {
+  position: fixed;
+  top: -100px; left: 50%;
+  transform: translateX(-50%);
+  width: 700px; height: 400px;
+  background: radial-gradient(ellipse, rgba(56,189,248,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
 
-        .error-box {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(231, 76, 60, 0.15);
-            border-radius: 6px;
-            font-size: 13px;
-            text-align: left;
-            max-height: 140px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 580px;
+  overflow: hidden;
+  position: relative;
+  animation: cardIn 0.4s ease;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
 
-        .buttons {
-            margin-top: 20px;
-        }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-        .btn {
-            display: inline-block;
-            margin: 8px;
-            padding: 10px 18px;
-            background: #3498db;
-            color: white;
-            border-radius: 6px;
-            text-decoration: none;
-            transition: 0.3s;
-            cursor: pointer;
-        }
+.card-bar { height: 3px; }
+.card-bar.success-bar { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+.card-bar.fail-bar    { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+.card-bar.medium-bar  { background: linear-gradient(90deg, transparent, var(--yellow), transparent); }
 
-        .btn:hover {
-            background: #2980b9;
-        }
+.card-body { padding: 32px; }
 
-        .link-box {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 6px;
-            word-break: break-all;
-            font-size: 14px;
-        }
-    </style>
+/* STATUS HEADER */
+.status-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.status-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.icon-success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.2); }
+.icon-fail    { background: rgba(244,63,94,0.12);  border: 1px solid rgba(244,63,94,0.2); }
+.icon-medium  { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.2); }
+.icon-na      { background: rgba(100,116,139,0.12);border: 1px solid rgba(100,116,139,0.2); }
+
+.status-info h2 { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.status-info p  { font-size: 13px; color: var(--muted); }
+
+/* METRICS */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.metric {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.metric-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.metric-value { font-family: var(--mono); font-size: 16px; font-weight: 700; }
+.metric-value.low      { color: var(--green); }
+.metric-value.medium   { color: var(--yellow); }
+.metric-value.high     { color: var(--red); }
+.metric-value.neutral  { color: var(--text); }
+.metric-value.success-c{ color: var(--green); }
+.metric-value.fail-c   { color: var(--red); }
+
+/* LIVE BOX */
+.live-box {
+  background: rgba(16,185,129,0.04);
+  border: 1px solid rgba(16,185,129,0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.live-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.live-url {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.live-actions { display: flex; gap: 10px; margin-top: 14px; }
+
+.btn-open {
+  flex: 1; padding: 10px;
+  background: linear-gradient(135deg, var(--green), #059669);
+  border: none; border-radius: 8px;
+  color: #fff; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: 0.2s;
+}
+.btn-open:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.3); }
+
+.btn-copy {
+  flex: 1; padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--muted);
+  font-size: 13px; cursor: pointer; transition: 0.2s;
+}
+.btn-copy:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
+/* WEBHOOK BOX */
+.webhook-box {
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.webhook-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.webhook-blink {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 6px var(--yellow);
+  display: inline-block;
+  animation: pulse 1.5s infinite;
+}
+
+.webhook-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+.webhook-url-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.webhook-url-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--yellow);
+  word-break: break-all;
+  flex: 1;
+}
+
+.btn-copy-webhook {
+  padding: 5px 12px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 6px;
+  color: var(--yellow);
+  font-family: var(--mono);
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s;
+  flex-shrink: 0;
+}
+.btn-copy-webhook:hover { background: rgba(245,158,11,0.18); }
+
+.webhook-steps {
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 2.1;
+}
+
+.webhook-steps-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.webhook-steps .step strong { color: var(--text); }
+
+.webhook-note {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.webhook-note strong { color: var(--accent); }
+
+/* ERROR BOX */
+.error-box {
+  background: rgba(244,63,94,0.04);
+  border: 1px solid rgba(244,63,94,0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.error-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--red);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.error-content {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #fca5a5;
+  line-height: 1.6;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+.error-content::-webkit-scrollbar { width: 4px; }
+.error-content::-webkit-scrollbar-thumb { background: rgba(244,63,94,0.3); border-radius: 2px; }
+
+/* NAV ACTIONS */
+.nav-actions { display: flex; gap: 10px; }
+
+.btn-nav {
+  flex: 1; padding: 11px;
+  border-radius: 8px;
+  text-decoration: none;
+  text-align: center;
+  font-size: 13px; font-weight: 500;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+}
+.btn-nav:hover { color: var(--text); background: rgba(255,255,255,0.08); border-color: var(--border); }
+
+.btn-nav.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #050a12; border-color: transparent; font-weight: 700;
+}
+.btn-nav.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(56,189,248,0.3); }
+</style>
 </head>
 <body>
+
+<div class="glow-1"></div>
+
 <div class="card">
-    <h2>🚀 Deployment Result</h2>
+  {% if "FAILED" in status or "ERROR" in status or "UNSUPPORTED" in status %}
+    <div class="card-bar fail-bar"></div>
+  {% elif level == "HIGH" %}
+    <div class="card-bar medium-bar"></div>
+  {% else %}
+    <div class="card-bar success-bar"></div>
+  {% endif %}
 
-    <p class="status 
-        {% if level == 'LOW' %}low
-        {% elif level == 'MEDIUM' %}medium
-        {% elif level == 'HIGH' %}high
-        {% endif %}">
-        Risk Level: {{ level }}
-    </p>
+  <div class="card-body">
 
-    <p class="status 
-        {% if 'FAILED' in status or 'ERROR' in status or 'UNSUPPORTED' in status %}fail
-        {% else %}success
-        {% endif %}">
-        Status: {{ status }}
-    </p>
-
-    <p class="status">Execution Time: {{ time }} sec</p>
-
-    {% if "LIVE" in status %}
-    <div class="link-box" id="appLink">
-        {{ status.split('→')[1].strip() }}
+    <!-- HEADER -->
+    <div class="status-header">
+      <div class="status-icon
+        {% if 'FAILED' in status or 'ERROR' in status %}icon-fail
+        {% elif 'ROLLBACK' in status %}icon-medium
+        {% elif 'LIVE' in status %}icon-success
+        {% else %}icon-na{% endif %}">
+        {% if 'FAILED' in status or 'ERROR' in status %}❌
+        {% elif 'ROLLBACK' in status %}↩️
+        {% elif 'LIVE' in status %}✅
+        {% else %}⚠️{% endif %}
+      </div>
+      <div class="status-info">
+        <h2>
+          {% if 'LIVE' in status %}Deployment Live
+          {% elif 'ROLLBACK' in status %}Rollback Complete
+          {% elif 'FAILED' in status %}Build Failed
+          {% elif 'ERROR' in status %}Pipeline Error
+          {% else %}{{ status }}{% endif %}
+        </h2>
+        <p>Pipeline execution complete • {{ time }}s total</p>
+      </div>
     </div>
 
-    <div class="buttons">
-        <button class="btn" onclick="openApp()">🌐 Open App</button>
-        <button class="btn" onclick="copyLink()">📋 Copy URL</button>
+    <!-- METRICS -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Risk Level</div>
+        <div class="metric-value
+          {% if level == 'LOW' %}low
+          {% elif level == 'MEDIUM' %}medium
+          {% elif level == 'HIGH' %}high
+          {% else %}neutral{% endif %}">
+          {{ level }}
+        </div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Duration</div>
+        <div class="metric-value neutral">{{ time }}s</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Result</div>
+        <div class="metric-value
+          {% if 'FAILED' in status or 'ERROR' in status %}fail-c
+          {% else %}success-c{% endif %}">
+          {% if 'LIVE' in status %}LIVE
+          {% elif 'ROLLBACK' in status %}REVERTED
+          {% elif 'FAILED' in status %}FAILED
+          {% else %}N/A{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE URL -->
+    {% if "LIVE" in status %}
+    <div class="live-box">
+      <div class="live-tag">
+        <span class="live-dot"></span>
+        Live
+      </div>
+      <div class="live-url" id="appUrl">{{ status.split('→')[1].strip() }}</div>
+      <div class="live-actions">
+        <button class="btn-open" onclick="openApp()">🌐 Open App</button>
+        <button class="btn-copy" onclick="copyLink()" id="copyBtn">📋 Copy URL</button>
+      </div>
+    </div>
+
+    <!-- WEBHOOK INSTRUCTIONS -->
+    <div class="webhook-box">
+      <div class="webhook-title">
+        <span class="webhook-blink"></span>
+        ⚡ Enable Auto-Deploy on Every Push
+      </div>
+
+      <div class="webhook-desc">
+        Want this repo to <strong style="color:var(--text)">automatically redeploy</strong>
+        every time you push to GitHub? Add this webhook to your repo
+        <strong style="color:var(--text)">once</strong> — done forever.
+      </div>
+
+      <div class="webhook-url-row">
+        <span class="webhook-url-text" id="webhookUrlText">{{ request.host_url }}webhook</span>
+        <button class="btn-copy-webhook" onclick="copyWebhook()" id="copyWebhookBtn">📋 Copy</button>
+      </div>
+
+      <div class="webhook-steps">
+        <div class="webhook-steps-title">Setup Steps</div>
+        <div class="step">1️⃣ &nbsp;Go to your <strong>GitHub repo → Settings → Webhooks → Add webhook</strong></div>
+        <div class="step">2️⃣ &nbsp;Paste the URL above as <strong>Payload URL</strong></div>
+        <div class="step">3️⃣ &nbsp;Set Content type to <strong>application/json</strong></div>
+        <div class="step">4️⃣ &nbsp;Select <strong>Just the push event</strong> ✅</div>
+        <div class="step">5️⃣ &nbsp;Click <strong>Add webhook</strong> and you're done</div>
+        <div class="webhook-note">
+          ⚡ After this — every push to <strong>main branch</strong>
+          auto-redeploys on the <strong>same URL</strong> above. No manual deploy needed.
+        </div>
+      </div>
     </div>
     {% endif %}
 
+    <!-- ERROR -->
     {% if error %}
     <div class="error-box">
-        <strong>Error / Build Log:</strong><br>
-        {{ error }}
+      <div class="error-label">Error / Build Log</div>
+      <div class="error-content">{{ error }}</div>
     </div>
     {% endif %}
 
-    <div class="buttons">
-        <a href="/" class="btn">🏠 Home</a>
-        <a href="/dashboard" class="btn">📊 Dashboard</a>
-        <a href="/logout" class="btn">🚪 Logout</a>
+    <!-- ACTIONS -->
+    <div class="nav-actions">
+      <a href="/" class="btn-nav primary">🏠 Home</a>
+      <a href="/dashboard" class="btn-nav">📊 Dashboard</a>
+      <a href="/logout" class="btn-nav">↩ Logout</a>
     </div>
+
+  </div>
 </div>
 
 <script>
 {% if "LIVE" in status %}
-    let url = "{{ status.split('→')[1].strip() }}";
+  let url = "{{ status.split('→')[1].strip() }}";
+  window.open(url, "_blank");
 
-    // 🔥 Auto open
-    window.open(url, "_blank");
+  function openApp() { window.open(url, "_blank"); }
 
-    function openApp(){
-        window.open(url, "_blank");
-    }
+  function copyLink() {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById("copyBtn");
+      btn.textContent = "✅ Copied!";
+      setTimeout(() => btn.textContent = "📋 Copy URL", 2000);
+    });
+  }
 
-    function copyLink(){
-        navigator.clipboard.writeText(url);
-        alert("URL copied!");
-    }
+  function copyWebhook() {
+    const webhookUrl = document.getElementById("webhookUrlText").innerText.trim();
+    navigator.clipboard.writeText(webhookUrl).then(() => {
+      const btn = document.getElementById("copyWebhookBtn");
+      btn.textContent = "✅ Copied!";
+      btn.style.color = "var(--green)";
+      btn.style.borderColor = "rgba(16,185,129,0.3)";
+      btn.style.background = "rgba(16,185,129,0.1)";
+      setTimeout(() => {
+        btn.textContent = "📋 Copy";
+        btn.style.color = "var(--yellow)";
+        btn.style.borderColor = "rgba(245,158,11,0.25)";
+        btn.style.background = "rgba(245,158,11,0.1)";
+      }, 2000);
+    });
+  }
 {% endif %}
 </script>
-
 </body>
 </html>

@@ -1,307 +1,518 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Dashboard</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Dashboard — Intelligent CI/CD</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050a12;
+  --surface: #0c1420;
+  --surface2: #0f1c2e;
+  --border: rgba(56,189,248,0.1);
+  --border2: rgba(255,255,255,0.05);
+  --accent: #38bdf8;
+  --accent2: #0ea5e9;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #f43f5e;
+  --purple: #a78bfa;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <style>
-      body {
-        margin: 0;
-        font-family: "Segoe UI";
-        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-        color: white;
-      }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
 
-      /* NAVBAR */
-      .nav {
-        display: flex;
-        justify-content: space-between;
-        padding: 15px 30px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-      }
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.2); border-radius: 3px; }
 
-      .nav a {
-        color: white;
-        text-decoration: none;
-        margin-left: 20px;
-      }
+/* NAV */
+.nav {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: rgba(12,20,32,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
 
-      /* CARDS */
-      .container {
-        padding: 20px;
-      }
+.nav-logo {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
 
-      .cards {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 15px;
-      }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-      .card {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-      }
+.nav-link {
+  padding: 7px 13px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
 
-      .card h2 {
-        margin: 5px 0;
-      }
+.nav-logout {
+  padding: 7px 13px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 13px;
+  transition: 0.2s;
+  border: 1px solid transparent;
+}
+.nav-logout:hover { color: var(--red); border-color: rgba(244,63,94,0.2); background: rgba(244,63,94,0.05); }
 
-      /* CHARTS */
-      .charts {
-        margin-top: 30px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-      }
+/* PAGE */
+.page { padding: 28px; max-width: 1400px; margin: 0 auto; }
 
-      .chart-box {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        border-radius: 10px;
-      }
+.page-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-title::before { content: ''; width: 20px; height: 1px; background: var(--accent); }
 
-      /* TABLE */
-      .table {
-        margin-top: 30px;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        border-radius: 10px;
-      }
+/* STAT CARDS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.stat-card:hover { border-color: var(--border); transform: translateY(-1px); }
 
-      th,
-      td {
-        padding: 8px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  opacity: 0.6;
+}
 
-      canvas {
-        max-height: 300px !important;
-      }
+.stat-card.s-total::before { background: var(--accent); }
+.stat-card.s-success::before { background: var(--green); }
+.stat-card.s-fail::before { background: var(--red); }
+.stat-card.s-time::before { background: var(--yellow); }
+.stat-card.s-rate::before { background: var(--purple); }
 
-      /* 🔥 NEW FILTER STYLE */
-      .filter-box {
-        margin-bottom: 15px;
-      }
+.stat-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
 
-      .filter-box input,
-      .filter-box select {
-        padding: 8px;
-        margin-right: 10px;
-        border-radius: 6px;
-        border: none;
-        background: #1e2b3f;
-        color: white;
-      }
+.stat-value {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
 
-      .filter-box button {
-        padding: 8px 12px;
-        background: #3498db;
-        border: none;
-        border-radius: 6px;
-        color: white;
-        cursor: pointer;
-      }
+.stat-card.s-total .stat-value { color: var(--accent); }
+.stat-card.s-success .stat-value { color: var(--green); }
+.stat-card.s-fail .stat-value { color: var(--red); }
+.stat-card.s-time .stat-value { color: var(--yellow); }
+.stat-card.s-rate .stat-value { color: var(--purple); }
 
-      .filter-box button:hover {
-        background: #2980b9;
-      }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-      .filter-box a {
-        margin-left: 10px;
-        color: #e74c3c;
-        text-decoration: none;
-      }
-    </style>
-  </head>
+/* CHARTS GRID */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
 
-  <body>
-    <div class="nav">
-      <div>🚀 Intelligent CI/CD Dashboard</div>
-      <div>
-        <a href="/">Home</a>
-        {% if role == "admin" or role == "superadmin" %}
-        <a href="/system-control">⚙️ System Control</a>
-        {% endif %}
-        <a href="/logout">Logout</a>
-      </div>
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.chart-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.chart-wrap { height: 200px; position: relative; }
+
+/* FILTER */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-input,
+.filter-select {
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.filter-input:focus, .filter-select:focus {
+  border-color: var(--accent);
+  background: rgba(56,189,248,0.04);
+}
+
+.filter-input::placeholder { color: var(--muted); }
+.filter-select option { background: var(--surface); }
+
+.filter-btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #050a12;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.filter-btn:hover { background: var(--accent2); }
+
+.filter-reset {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: 0.2s;
+}
+.filter-reset:hover { color: var(--red); border-color: rgba(244,63,94,0.2); }
+
+/* TABLE */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border2);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border2);
+  background: rgba(255,255,255,0.02);
+}
+
+tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: 0.15s;
+}
+tbody tr:hover { background: rgba(56,189,248,0.03); }
+tbody tr:last-child { border-bottom: none; }
+
+tbody td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+tbody td:first-child { color: var(--text); font-family: var(--mono); font-size: 11px; }
+
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.risk-LOW { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+.risk-MEDIUM { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+.risk-HIGH { background: rgba(244,63,94,0.12); color: var(--red); border: 1px solid rgba(244,63,94,0.2); }
+.risk-AUTO { background: rgba(167,139,250,0.12); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+.status-cell {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.status-cell.live { color: var(--green); }
+.status-cell.rollback { color: var(--yellow); }
+.status-cell.fail { color: var(--red); }
+
+.time-cell {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">📊 CI/CD Dashboard</div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">🏠 Home</a>
+    {% if role == "admin" or role == "superadmin" %}
+    <a href="/system-control" class="nav-link">⚙️ System</a>
+    {% endif %}
+    <a href="/logout" class="nav-logout">↩ Logout</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-title">Deployment Analytics</div>
+
+  <!-- STAT CARDS -->
+  <div class="stats-grid">
+    <div class="stat-card s-total">
+      <div class="stat-label">Total Runs</div>
+      <div class="stat-value">{{total}}</div>
+      <div class="stat-sub">All pipelines</div>
+    </div>
+    <div class="stat-card s-success">
+      <div class="stat-label">Successful</div>
+      <div class="stat-value">{{success}}</div>
+      <div class="stat-sub">Live deployments</div>
+    </div>
+    <div class="stat-card s-fail">
+      <div class="stat-label">Failures</div>
+      <div class="stat-value">{{failed}}</div>
+      <div class="stat-sub">Failed builds</div>
+    </div>
+    <div class="stat-card s-time">
+      <div class="stat-label">Avg Time</div>
+      <div class="stat-value">{{avg_time}}<span style="font-size:14px;opacity:0.6">s</span></div>
+      <div class="stat-sub">Per deployment</div>
+    </div>
+    <div class="stat-card s-rate">
+      <div class="stat-label">Fail Rate</div>
+      <div class="stat-value">{{failure_rate}}<span style="font-size:14px;opacity:0.6">%</span></div>
+      <div class="stat-sub">Of all runs</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Risk Distribution</div>
+      <div class="chart-wrap"><canvas id="riskChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Deployment Status</div>
+      <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Execution Time</div>
+      <div class="chart-wrap"><canvas id="timeChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Repo Failures</div>
+      <div class="chart-wrap"><canvas id="repoChart"></canvas></div>
+    </div>
+    {% if role != "user" %}
+    <div class="chart-card" style="grid-column: span 2;">
+      <div class="chart-title">Failures Per User</div>
+      <div class="chart-wrap"><canvas id="userChart"></canvas></div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- HISTORY TABLE -->
+  <div class="table-card">
+    <div class="table-header">Deployment History</div>
+
+    <div style="padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);">
+      <form method="GET" class="filter-row">
+        <input type="text" name="repo" class="filter-input" placeholder="🔍 Search repo" value="{{ repo_filter or '' }}">
+        <input type="text" name="user" class="filter-input" placeholder="👤 Search user" value="{{ user_filter or '' }}">
+        <select name="risk" class="filter-select">
+          <option value="">All Risk</option>
+          <option value="LOW" {% if risk_filter == 'LOW' %}selected{% endif %}>LOW</option>
+          <option value="MEDIUM" {% if risk_filter == 'MEDIUM' %}selected{% endif %}>MEDIUM</option>
+          <option value="HIGH" {% if risk_filter == 'HIGH' %}selected{% endif %}>HIGH</option>
+        </select>
+        <button type="submit" class="filter-btn">Apply</button>
+        <a href="/dashboard" class="filter-reset">Reset</a>
+      </form>
     </div>
 
-    <div class="container">
-      <!-- CARDS -->
-      <div class="cards">
-        <div class="card">
-          <h4>Total</h4>
-          <h2>{{total}}</h2>
-        </div>
-        <div class="card">
-          <h4>Success</h4>
-          <h2>{{success}}</h2>
-        </div>
-        <div class="card">
-          <h4>Failures</h4>
-          <h2>{{failed}}</h2>
-        </div>
-        <div class="card">
-          <h4>Avg Time</h4>
-          <h2>{{avg_time}}s</h2>
-        </div>
-        <div class="card">
-          <h4>Failure %</h4>
-          <h2>{{failure_rate}}%</h2>
-        </div>
-      </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th>Risk</th>
+          <th>Status</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in history %}
+        <tr>
+          <td>{{ h.repo }}</td>
+          <td>
+            <span class="risk-badge risk-{{ h.risk }}">{{ h.risk }}</span>
+          </td>
+          <td>
+            <span class="status-cell
+              {% if 'LIVE' in h.status %}live
+              {% elif 'ROLLBACK' in h.status %}rollback
+              {% elif 'FAILED' in h.status or 'ERROR' in h.status %}fail
+              {% endif %}">
+              {% if 'LIVE' in h.status %}● LIVE
+              {% elif 'ROLLBACK' in h.status %}↩ ROLLBACK
+              {% elif 'FAILED' in h.status %}✕ FAILED
+              {% else %}{{ h.status[:30] }}{% endif %}
+            </span>
+          </td>
+          <td class="time-cell">{{ h.time }}s</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 
-      <!-- CHARTS -->
-      <div class="charts">
-        <div class="chart-box">
-          <canvas id="riskChart"></canvas>
-        </div>
+<script>
+const chartDefaults = {
+  plugins: { legend: { labels: { color: '#64748b', font: { family: 'Space Mono', size: 10 } } } },
+  scales: {}
+};
 
-        <div class="chart-box">
-          <canvas id="statusChart"></canvas>
-        </div>
+const gridColor = 'rgba(255,255,255,0.04)';
+const tickColor = '#64748b';
 
-        <div class="chart-box">
-          <canvas id="timeChart"></canvas>
-        </div>
+function axisDefaults() {
+  return {
+    x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { family: 'Space Mono', size: 9 } } },
+    y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { family: 'Space Mono', size: 9 } } }
+  };
+}
 
-        <div class="chart-box">
-          <canvas id="repoChart"></canvas>
-        </div>
+new Chart(document.getElementById("riskChart"), {
+  type: "doughnut",
+  data: {
+    labels: ["Low", "Medium", "High"],
+    datasets: [{ data: [{{low}}, {{medium}}, {{high}}], backgroundColor: ['rgba(16,185,129,0.8)', 'rgba(245,158,11,0.8)', 'rgba(244,63,94,0.8)'], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#64748b', font: { family: 'Space Mono', size: 10 }, padding: 16 } } }, cutout: '65%' }
+});
 
-        {% if role != "user" %}
-        <div class="chart-box">
-          <canvas id="userChart"></canvas>
-        </div>
-        {% endif %}
-      </div>
+new Chart(document.getElementById("statusChart"), {
+  type: "bar",
+  data: {
+    labels: ["Success", "Rollback", "Failed"],
+    datasets: [{ data: [{{success}}, {{rollback}}, {{failed}}], backgroundColor: ['rgba(16,185,129,0.7)', 'rgba(245,158,11,0.7)', 'rgba(244,63,94,0.7)'], borderRadius: 6, borderWidth: 0 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axisDefaults() }
+});
 
-      <!-- TABLE -->
-      <div class="table">
-        <h3>Deployment History</h3>
+new Chart(document.getElementById("timeChart"), {
+  type: "line",
+  data: {
+    labels: {{ times|tojson }},
+    datasets: [{ label: "Time (s)", data: {{ times|tojson }}, fill: true, borderColor: 'rgba(56,189,248,0.8)', backgroundColor: 'rgba(56,189,248,0.06)', pointBackgroundColor: '#38bdf8', pointRadius: 3, tension: 0.4, borderWidth: 2 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axisDefaults() }
+});
 
-        <!-- 🔥 FILTER SECTION -->
-        <form method="GET" class="filter-box">
-          <input
-            type="text"
-            name="repo"
-            placeholder="Search by repo"
-            value="{{ repo_filter or '' }}"
-          />
+new Chart(document.getElementById("repoChart"), {
+  type: "bar",
+  data: {
+    labels: {{ repo_ranking | map(attribute='repo') | list | tojson }},
+    datasets: [{ label: "Failures", data: {{ repo_ranking | map(attribute='fail') | list | tojson or [0] }}, backgroundColor: 'rgba(244,63,94,0.6)', borderRadius: 6, borderWidth: 0 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axisDefaults(), indexAxis: 'y' }
+});
 
-          <input
-            type="text"
-            name="user"
-            placeholder="Search by user"
-            value="{{ user_filter or '' }}"
-          />
-
-          <select name="risk">
-            <option value="">All Risk</option>
-
-            <option value="LOW" {% if risk_filter == 'LOW' %}selected{% endif %}>
-              LOW
-            </option>
-
-            <option value="MEDIUM" {% if risk_filter == 'MEDIUM' %}selected{% endif %}>
-              MEDIUM
-            </option>
-
-            <option value="HIGH" {% if risk_filter == 'HIGH' %}selected{% endif %}>
-              HIGH
-            </option>
-          </select>
-
-          <button type="submit">🔍 Filter</button>
-          <a href="/dashboard">Reset</a>
-        </form>
-
-        <table>
-          <tr>
-            <th>Repo</th>
-            <th>Risk</th>
-            <th>Status</th>
-            <th>Time</th>
-          </tr>
-
-          {% for h in history %}
-          <tr>
-            <td>{{h.repo}}</td>
-            <td>{{h.risk}}</td>
-            <td>{{h.status}}</td>
-            <td>{{h.time}}</td>
-          </tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-
-    <script>
-
-      new Chart(document.getElementById("riskChart"), {
-      type: "pie",
-      data: {
-      labels: ["Low","Medium","High"],
-      datasets: [{
-      data: [{{low}},{{medium}},{{high}}]
-      }]
-      }
-      });
-
-      new Chart(document.getElementById("statusChart"), {
-      type: "bar",
-      data: {
-      labels: ["Success","Rollback","Failed"],
-      datasets: [{
-      data: [{{success}},{{rollback}},{{failed}}]
-      }]
-      }
-      });
-
-      new Chart(document.getElementById("timeChart"), {
-      type: "line",
-      data: {
-      labels: {{ times|tojson }},
-      datasets: [{
-      label:"Execution Time",
-      data: {{ times|tojson }},
-      fill:false
-      }]
-      }
-      });
-
-      new Chart(document.getElementById("repoChart"), {
-      type: "bar",
-      data: {
-      labels: {{ repo_ranking | map(attribute='repo') | list | tojson }},
-      datasets: [{
-      label:"Failures",
-      data: {{ repo_ranking | map(attribute='fail') | list | tojson or [0] }}
-      }]
-      }
-      });
-
-      {% if role != "user" %}
-      new Chart(document.getElementById("userChart"), {
-      type: "bar",
-      data: {
-      labels: {{ user_stats.keys() | list | tojson }},
-      datasets: [{
-      label:"Failures per User",
-      data: {{ user_stats.values() | map(attribute='fail') | list | tojson }}
-      }]
-      }
-      });
-      {% endif %}
-    </script>
-  </body>
+{% if role != "user" %}
+new Chart(document.getElementById("userChart"), {
+  type: "bar",
+  data: {
+    labels: {{ user_stats.keys() | list | tojson }},
+    datasets: [{ label: "Failures per User", data: {{ user_stats.values() | map(attribute='fail') | list | tojson }}, backgroundColor: 'rgba(167,139,250,0.7)', borderRadius: 6, borderWidth: 0 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axisDefaults() }
+});
+{% endif %}
+</script>
+</body>
 </html>
